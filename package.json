@@ -12,7 +12,12 @@
   "license": "ISC",
   "packageManager": "pnpm@10.11.0",
   "devDependencies": {
+    "@types/express": "5.0.2",
+    "@types/node": "22.15.29",
     "tsc-watch": "6.0.4",
     "typescript": "5.1.3"
+  },
+  "dependencies": {
+    "express": "5.1.0"
   }
 }
