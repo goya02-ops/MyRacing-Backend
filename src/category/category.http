@@ -1,0 +1,38 @@
+###obtener categorías
+GET http://localhost:3000/api/categories
+
+###obtener categoría por id
+GET http://localhost:3000/api/categories/45b306bf-7d5f-4199-9706-b5776d691279
+
+###crear categoría
+POST http://localhost:3000/api/categories
+Content-Type: application/json
+
+{
+  "denomination": "Gran Tourer 1",
+  "description": "Descripción de la categoría Gran Tourer 1",
+  "abbreviation": "GT1",
+  "status": "active"
+}
+
+###actualizar categoría (PUT)
+PUT http://localhost:3000/api/categories/45b306bf-7d5f-4199-9706-b5776d691279
+Content-Type: application/json
+
+{
+  "denomination": "Gran Tourer 2",
+  "description": "Descripción actualizada de la categoría Gran Tourer 2",
+  "abbreviation": "GT2",
+  "status": "inactive"
+}
+
+###actualizar categoría (PATCH)
+PATCH http://localhost:3000/api/categories/45b306bf-7d5f-4199-9706-b5776d691279
+Content-Type: application/json  
+
+{
+  "status": "active"
+}
+
+###eliminar categoría
+DELETE http://localhost:3000/api/categories/45b306bf-7d5f-4199-9706-b5776d691279
