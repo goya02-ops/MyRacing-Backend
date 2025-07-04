@@ -21,29 +21,29 @@ const categories: Category[] = [
 ];
 
 export class CategoryRepository implements Repository<Category> {
-  findAll(): Category[] | undefined {
-    return categories;
+  public async findAll(): Promise<Category[] | undefined> {
+    return await categories;
   }
 
-  findOne(item: { id: string }): Category | undefined {
-    return categories.find((category) => category.id === item.id);
+  public async findOne(item: { id: string }): Promise<Category | undefined> {
+    return await categories.find((category) => category.id === item.id);
   }
 
-  add(item: Category): Category {
-    categories.push(item);
+  public async add(item: Category): Promise<Category | undefined> {
+    await categories.push(item);
     return item;
   }
 
-  update(item: Category): Category | undefined {
-    const index = categories.findIndex(category => category.id === item.id);
+  public async update(item: Category): Promise<Category | undefined> {
+    const index = await categories.findIndex(category => category.id === item.id);
     if (index !== -1) {
-      categories[index] = {...categories[index],...item};
+      categories[index] = { ...categories[index], ...item };
     }
     return categories[index];
   }
 
-  delete(item: { id: string }): Category | undefined {
-    const index = categories.findIndex((category) => category.id === item.id);
+  public async delete(item: { id: string }): Promise<Category | undefined> {
+    const index = await categories.findIndex((category) => category.id === item.id);
     if (index !== -1) {
       const deletedCategory = categories[index];
       categories.splice(index, 1)[0];

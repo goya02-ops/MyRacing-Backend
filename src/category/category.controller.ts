@@ -20,8 +20,8 @@ function sanitizeCategoryInput(req: Request, res: Response, next: NextFunction){
   next();
 }
 
-function getAll(req: Request, res: Response) {
-  const categories = repository.findAll();
+async function getAll(req: Request, res: Response) {
+  const categories = await repository.findAll();
   if (!categories) {
     res.status(404).json({ message: "No categories found" });
     return;
@@ -29,8 +29,8 @@ function getAll(req: Request, res: Response) {
   res.status(200).json({data: categories});
 }
 
-function getOne(req: Request, res: Response) {
-  const category = repository.findOne({ id: req.params.id });
+async function getOne(req: Request, res: Response) {
+  const category = await repository.findOne({ id: req.params.id });
   if (!category) {
     res.status(404).json({ message: "Category not found" });
     return;
@@ -38,7 +38,7 @@ function getOne(req: Request, res: Response) {
   res.status(200).json({data: category});
 }
 
-function add(req: Request, res: Response) {
+async function add(req: Request, res: Response) {
   const input = req.body.sanitizeInput;
   const newCategory = new Category( //this assign the id automatically
     input.denomination,
@@ -47,13 +47,13 @@ function add(req: Request, res: Response) {
     input.status,
     input.id
   );
-  repository.add(newCategory);
+  await repository.add(newCategory);
   res.status(201).json({data: newCategory});
 }
 
-function update(req: Request, res: Response) {
+async function update(req: Request, res: Response) {
   req.body.sanitizeInput.id = req.params.id;
-  const updatedCategory = repository.update(req.body.sanitizeInput);
+  const updatedCategory = await repository.update(req.body.sanitizeInput);
   if (!updatedCategory) {
     res.status(404).json({ message: "Category not found" });
     return;
@@ -61,8 +61,8 @@ function update(req: Request, res: Response) {
   res.status(200).json({data: updatedCategory});
 }
 
-function remove(req: Request, res: Response) {
-  const deletedCategory = repository.delete({ id: req.params.id });
+async function remove(req: Request, res: Response) {
+  const deletedCategory = await repository.delete({ id: req.params.id });
   if (!deletedCategory) {
     res.status(404).json({ message: "Category not found" });
     return;
