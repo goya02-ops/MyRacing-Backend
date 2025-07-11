@@ -1,10 +1,10 @@
 import { CategoryController as controller } from "./category.controller.js";
 import { Router } from "express";
 
-export const categoryRoutes = Router();
-categoryRoutes.get("/", controller.getAll);
-categoryRoutes.get("/:id", controller.getOne);
-categoryRoutes.post("/", controller.sanitizeCategoryInput,controller.add);
-categoryRoutes.put("/:id", controller.sanitizeCategoryInput,controller.update);
-categoryRoutes.patch("/:id", controller.sanitizeCategoryInput, controller.update);
-categoryRoutes.delete("/:id", controller.remove);
+export const categoryRouter = Router();
+categoryRouter.get("/", controller.getAll);
+categoryRouter.get("/:id", controller.getOne);
+categoryRouter.post("/", controller.sanitizeCategoryInput,controller.add);
+categoryRouter.put("/:id", controller.sanitizeCategoryInput,controller.update);
+categoryRouter.patch("/:id", controller.sanitizeCategoryInput, controller.update);
+categoryRouter.delete("/:id", controller.remove);
