@@ -1,8 +1,7 @@
 import { Request, Response, NextFunction } from "express";
-import { CategoryRepository } from "./category.repository.js";
-import { Category } from "./categoryEntity.js";
+import { Category } from "./category.entity.js";
+import { orm } from "../shared/orm.js";
 
-const repository = new CategoryRepository();
 
 function sanitizeCategoryInput(req: Request, res: Response, next: NextFunction){
 
@@ -20,54 +19,58 @@ function sanitizeCategoryInput(req: Request, res: Response, next: NextFunction){
   next();
 }
 
-function getAll(req: Request, res: Response) {
-  const categories = repository.findAll();
-  if (!categories) {
-    res.status(404).json({ message: "No categories found" });
-    return;
+const em = orm.em.fork(); // create a new isolated EntityManager instance for this request
+
+async function getAll(req: Request, res: Response) {
+  try {
+    const categories = await em.find(Category, {});
+    res.status(200).json({message: "Find all categories classes", data: categories});
+  } catch (error: any) {
+    res.status(500).json({ data: error.message });
   }
-  res.status(200).json({data: categories});
 }
 
-function getOne(req: Request, res: Response) {
-  const category = repository.findOne({ id: req.params.id });
-  if (!category) {
-    res.status(404).json({ message: "Category not found" });
-    return;
+async function getOne(req: Request, res: Response) {
+  try {
+    const id = Number.parseInt(req.params.id)
+    const category = await em.findOneOrFail(Category,{ id })
+    res.status(200).json({message: "Category found: ", data: category})
+  } catch (error: any) {
+    res.status(500).json({ data: error.message })
   }
-  res.status(200).json({data: category});
 }
 
-function add(req: Request, res: Response) {
-  const input = req.body.sanitizeInput;
-  const newCategory = new Category( //this assign the id automatically
-    input.denomination,
-    input.description,
-    input.abbreviation,
-    input.status,
-    input.id
-  );
-  repository.add(newCategory);
-  res.status(201).json({data: newCategory});
+async function add(req: Request, res: Response) {
+  try{
+    const category = em.create(Category, req.body);
+    await em.flush();
+    res.status(201).json({ message: "Category class created", data: category });
+  } catch (error: any) {
+    res.status(500).json({ data: error.message });
+  }
 }
 
-function update(req: Request, res: Response) {
-  req.body.sanitizeInput.id = req.params.id;
-  const updatedCategory = repository.update(req.body.sanitizeInput);
-  if (!updatedCategory) {
-    res.status(404).json({ message: "Category not found" });
-    return;
+async function update(req: Request, res: Response) {
+  try {
+    const id = Number.parseInt(req.params.id);
+    const category = await em.findOneOrFail(Category, { id });
+    em.assign(category, req.body.sanitizeInput);
+    await em.flush();
+    res.status(200).json({ message: "Category class updated", data: category });
+  } catch (error:any) {
+    res.status(500).json({ data: error.message });
   }
-  res.status(200).json({data: updatedCategory});
 }
 
-function remove(req: Request, res: Response) {
-  const deletedCategory = repository.delete({ id: req.params.id });
-  if (!deletedCategory) {
-    res.status(404).json({ message: "Category not found" });
-    return;
+async function remove(req: Request, res: Response) {
+  try {
+    const id = Number.parseInt(req.params.id);
+    const category = await em.findOneOrFail(Category, { id });
+    await em.removeAndFlush(category);
+    res.status(200).json({ message: "Category class deleted", data: category });
+  } catch (error: any) {
+    res.status(500).json({ data: error.message });
   }
-  res.status(200).json({message:"Category deleted", data: deletedCategory});
 }
 
 export const CategoryController = {
