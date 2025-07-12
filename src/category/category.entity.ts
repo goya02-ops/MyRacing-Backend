@@ -1,5 +1,6 @@
-import { Entity, Property, ManyToOne, Cascade, Collection } from '@mikro-orm/core';
+import { Entity, Property, ManyToOne, Cascade, Collection, Rel } from '@mikro-orm/core';
 import { BaseEntity } from '../shared/baseEntity.js';
+//import { CategoryVersion } from './categoryVersion.entity.js';
 
 @Entity()
 export class Category extends BaseEntity {
@@ -15,5 +16,7 @@ export class Category extends BaseEntity {
 
   @Property({nullable: false})
   status!: string
-}
 
+//  @ManyToOne(() => CategoryVersion, { nullable: true})
+//  categoryVersions: Rel<CategoryVersion>;
+}
