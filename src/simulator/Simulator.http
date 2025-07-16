@@ -1,0 +1,43 @@
+###obtener simuladores
+GET http://localhost:3000/api/simulators
+
+###crear simuladores
+# @name createSimulators
+POST http://localhost:3000/api/simulators
+Content-Type: application/json
+
+{
+  "name": "Formula 1",
+  "description": "Categoría de Formula 1",
+  "abbreviation": "F1",
+  "status": "active"
+}
+
+### ID
+@id = {{createSimulators.response.body.data.id}}
+
+###obtener simulador por id
+GET http://localhost:3000/api/simulators/{{id}}
+
+
+###actualizar simulador (PUT)
+PUT http://localhost:3000/api/simulators/{{id}}
+Content-Type: application/json
+
+{
+  "denomination": "Formula 1",
+  "description": "Descripción actualizada de la categoría F1",
+  "abbreviation": "F1",
+  "status": "inactive"
+}
+
+###actualizar solo estado de simulador (PATCH)
+PATCH http://localhost:3000/api/simulators/{{id}}
+Content-Type: application/json
+
+{
+  "status": "active"
+}
+
+###eliminar simulador
+DELETE http://localhost:3000/api/simulators/45b306bf-7d5f-4199-9706-b5776d691279
