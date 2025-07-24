@@ -1,6 +1,7 @@
 import 'reflect-metadata'
 import express from "express";
 import { categoryRouter } from "./category/category.routes.js";
+import { circuitRouter } from "./circuit/circuit.routes.js";
 import { orm, syncSchema } from './shared/orm.js';
 import { RequestContext } from '@mikro-orm/core';
 
@@ -15,7 +16,7 @@ app.use((req, res, next) => {
 //antes de las rutas y de los middleware de negocio
 
 app.use("/api/categories", categoryRouter);
-
+app.use("/api/circuits", circuitRouter);
 
 app.use((_, res) => {
   res.status(404).json({ message: "Not Found" });
