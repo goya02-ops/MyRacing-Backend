@@ -1,0 +1,43 @@
+###obtener circuitos
+GET http://localhost:3000/api/circuits
+
+###crear circuito
+# @name createCircuit
+POST http://localhost:3000/api/circuits
+Content-Type: application/json
+
+{
+  "name": "Madring",
+  "description": "Circuito de Formula 1",
+  "abbreviation": "Madring F1",
+  "status": "active"
+}
+
+### ID
+@id = {{createCircuit.response.body.data.id}} 
+
+###obtener circuito por id
+GET http://localhost:3000/api/circuits/{{id}}
+
+
+###actualizar circuito (PUT)
+PUT http://localhost:3000/api/circuits/{{id}}
+Content-Type: application/json
+
+{
+  "denomination": "Madring Formula 1",
+  "description": "Descripción actualizada del circuito de F1",
+  "abbreviation": "Madring F1",
+  "status": "inactive"
+}
+
+###actualizar solo estado de circuito (PATCH)
+PATCH http://localhost:3000/api/categories/{{id}}
+Content-Type: application/json  
+
+{
+  "status": "active"
+}
+
+###eliminar circuito
+DELETE http://localhost:3000/api/circuits/{{id}}
