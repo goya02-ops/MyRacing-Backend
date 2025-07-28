@@ -1,149 +1,108 @@
-// src/simulator/simulator.controller.ts
-import { Request, Response } from 'express'
-// IMPORTANTE: Añadimos 'RequiredEntityData' aquí
-import { EntityManager, RequiredEntityData } from '@mikro-orm/core'
-import { Simulator } from './simulator.entity.js' // Importa tu entidad Simulator
 
-// Función auxiliar para obtener el EntityManager del RequestContext
-// Es crucial para acceder a orm.em dentro de los controladores
-const getEntityManager = (req: Request): EntityManager => {
-  // AÑADIDO PARA DEPURACIÓN: Verifica si (req as any).em está definido al recuperarlo
-  console.log('DEBUG: (req as any).em dentro de getEntityManager:', (req as any).em ? 'definido' : 'UNDEFINED');
-  return (req as any).em;
-};
+import { Request, Response, NextFunction } from "express";
+import { EntityManager, RequiredEntityData } from '@mikro-orm/core';
+import { Simulator } from "./simulator.entity.js";
 
 
-// Controlador para crear un nuevo simulador (POST /api/simulators)
-export const createSimulator = async (req: Request, res: Response) => {
+const getEntityManager = (req: Request): EntityManager => (req as any).em;
+
+
+function sanitizeSimulatorInput(req: Request, res: Response, next: NextFunction){
+  req.body.sanitizeInput = {
+    description: req.body.description,
+  };
+
+  Object.keys(req.body.sanitizeInput).forEach((key) => {
+    if (req.body.sanitizeInput[key] === undefined) delete req.body.sanitizeInput[key];
+  });
+
+  next();
+}
+
+
+async function getAllSimulators(req: Request, res: Response) {
   try {
-    const em = getEntityManager(req); // Obtén el EntityManager
-    const { description } = req.body; // Obtén la descripción del cuerpo de la solicitud
-
-    // Verifica que la descripción no esté vacía
-    if (!description) {
-      return res.status(400).json({ message: 'La descripción es obligatoria' });
-    }
-
-    // Crea una nueva instancia de Simulator.
-    // Usamos 'as RequiredEntityData<Simulator, 'id_simulator'>' para indicar a TypeScript
-    // que esperamos que el 'id_simulator' sea opcional para la creación
-    // porque es auto-generado por la base de datos (según tu entidad).
-    const newSimulator = em.create(Simulator, {
-      description,
-      // No incluimos 'id_simulator' aquí porque es auto-incrementable y la DB lo gestiona.
-      // Si TypeScript sigue quejándose, puedes poner 'id_simulator: undefined' como último recurso,
-      // pero con la configuración correcta de la entidad, no debería ser necesario.
-    } as RequiredEntityData<Simulator, 'id_simulator'>);
-
-
-    // Persiste la nueva instancia en la base de datos
-    await em.persistAndFlush(newSimulator);
-
-    // Envía la respuesta con el simulador creado y un estado 201 (Created)
-    return res.status(201).json(newSimulator);
-
+    const em = getEntityManager(req);
+    const simulators = await em.find(Simulator, {});
+    res.status(200).json({message: "Lista de simuladores obtenida", data: simulators});
   } catch (error: any) {
-    // Manejo de errores
-    console.error('Error al crear simulador:', error);
-    return res.status(500).json({ message: 'Error interno del servidor', error: error.message });
+    console.error('Error al obtener todos los simuladores:', error);
+    res.status(500).json({ data: error.message });
   }
-};
+}
 
-// Controlador para obtener todos los simuladores (GET /api/simulators)
-export const getSimulators = async (req: Request, res: Response) => {
+
+async function getOneSimulator(req: Request, res: Response) {
   try {
-    const em = getEntityManager(req); // Obtén el EntityManager
-    const simulators = await em.find(Simulator, {}); // Encuentra todos los simuladores
-
-    // Envía la lista de simuladores
-    return res.status(200).json(simulators);
-
+    const em = getEntityManager(req);
+    const id_simulator = Number.parseInt(req.params.id);
+    const simulator = await em.findOneOrFail(Simulator,{ id_simulator });
+    res.status(200).json({message: "Simulador encontrado: ", data: simulator});
   } catch (error: any) {
-    console.error('Error al obtener simuladores:', error);
-    return res.status(500).json({ message: 'Error interno del servidor', error: error.message });
+    console.error('Error al obtener un simulador por ID:', error);
+    if (error.name === 'NotFoundError') {
+      res.status(404).json({ message: 'Simulador no encontrado' });
+    } else {
+      res.status(500).json({ data: error.message });
+    }
   }
-};
+}
 
-// Controlador para obtener un simulador por ID (GET /api/simulators/:id)
-export const getSimulatorById = async (req: Request, res: Response) => {
-  try {
-    const em = getEntityManager(req); // Obtén el EntityManager
-    const id_simulator = parseInt(req.params.id); // Obtén el ID de los parámetros de la ruta
 
-    // Busca un simulador por su ID
-    const simulator = await em.findOne(Simulator, { id_simulator });
-
-    // Si no se encuentra el simulador, envía un 404
-    if (!simulator) {
-      return res.status(404).json({ message: 'Simulador no encontrado' });
-    }
-
-    // Envía el simulador encontrado
-    return res.status(200).json(simulator);
-
+async function addSimulator(req: Request, res: Response) {
+  try{
+    const em = getEntityManager(req);
+    const simulator = em.create(Simulator, req.body.sanitizeInput as RequiredEntityData<Simulator, 'id_simulator'>);
+    await em.flush();
+    res.status(201).json({ message: "Simulador creado exitosamente", data: simulator });
   } catch (error: any) {
-    console.error('Error al obtener simulador por ID:', error);
-    return res.status(500).json({ message: 'Error interno del servidor', error: error.message });
+    console.error('Error al añadir simulador:', error);
+    res.status(500).json({ data: error.message });
   }
-};
+}
 
-// Controlador para actualizar un simulador (PUT /api/simulators/:id)
-export const updateSimulator = async (req: Request, res: Response) => {
+
+async function updateSimulator(req: Request, res: Response) {
   try {
-    const em = getEntityManager(req); // Obtén el EntityManager
-    const id_simulator = parseInt(req.params.id); // Obtén el ID
-    const { description } = req.body; // Obtén la nueva descripción
-
-    // Busca el simulador por su ID
-    const simulator = await em.findOne(Simulator, { id_simulator });
-
-    // Si no se encuentra, envía un 404
-    if (!simulator) {
-      return res.status(404).json({ message: 'Simulador no encontrado' });
-    }
-
-    // Verifica que la descripción no esté vacía para la actualización
-    if (!description) {
-        return res.status(400).json({ message: 'La descripción es obligatoria para la actualización' });
-    }
-
-    // Actualiza la descripción
-    simulator.description = description;
-
-    // Persiste los cambios en la base de datos
-    await em.persistAndFlush(simulator);
-
-    // Envía la respuesta con el simulador actualizado
-    return res.status(200).json(simulator);
-
-  } catch (error: any) {
+    const em = getEntityManager(req);
+    const id_simulator = Number.parseInt(req.params.id);
+    const simulator = await em.findOneOrFail(Simulator, { id_simulator });
+    
+    em.assign(simulator, req.body.sanitizeInput);
+    await em.flush();
+    res.status(200).json({ message: "Simulador actualizado exitosamente", data: simulator });
+  } catch (error:any) {
     console.error('Error al actualizar simulador:', error);
-    return res.status(500).json({ message: 'Error interno del servidor', error: error.message });
-  }
-};
-
-// Controlador para eliminar un simulador (DELETE /api/simulators/:id)
-export const deleteSimulator = async (req: Request, res: Response) => {
-  try {
-    const em = getEntityManager(req); // Obtén el EntityManager
-    const id_simulator = parseInt(req.params.id); // Obtén el ID
-
-    // Busca el simulador por su ID
-    const simulator = await em.findOne(Simulator, { id_simulator });
-
-    // Si no se encuentra, envía un 404
-    if (!simulator) {
-      return res.status(404).json({ message: 'Simulador no encontrado' });
+    if (error.name === 'NotFoundError') {
+      res.status(404).json({ message: 'Simulador no encontrado para actualizar' });
+    } else {
+      res.status(500).json({ data: error.message });
     }
-
-    // Elimina el simulador
+  }
+}
+async function removeSimulator(req: Request, res: Response) {
+  try {
+    const em = getEntityManager(req);
+    const id_simulator = Number.parseInt(req.params.id);
+    const simulator = await em.findOneOrFail(Simulator, { id_simulator });
     await em.removeAndFlush(simulator);
-
-    // Envía una respuesta de éxito sin contenido (204 No Content)
-    return res.status(204).send();
-
+    res.status(200).json({ message: "Simulador eliminado exitosamente", data: simulator });
   } catch (error: any) {
     console.error('Error al eliminar simulador:', error);
-    return res.status(500).json({ message: 'Error interno del servidor', error: error.message });
+    if (error.name === 'NotFoundError') {
+      res.status(404).json({ message: 'Simulador no encontrado para eliminar' });
+    } else {
+      res.status(500).json({ data: error.message });
+    }
   }
+}
+
+
+export const SimulatorController = {
+  sanitizeSimulatorInput,
+  getAllSimulators,
+  getOneSimulator,
+  addSimulator,
+  updateSimulator,
+  removeSimulator
 };
