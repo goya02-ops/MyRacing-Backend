@@ -7,9 +7,7 @@ POST http://localhost:3000/api/simulators
 Content-Type: application/json
 
 {
-  "name": "Formula 1",
-  "description": "Categoría de Formula 1",
-  "abbreviation": "F1",
+  "name": "Assetto Corsa",
   "status": "active"
 }
 
@@ -25,10 +23,8 @@ PUT http://localhost:3000/api/simulators/{{id}}
 Content-Type: application/json
 
 {
-  "denomination": "Formula 1",
-  "description": "Descripción actualizada de la categoría F1",
-  "abbreviation": "F1",
-  "status": "inactive"
+  "name": "Assetto Corsa Competizione",
+  "status": "active"
 }
 
 ###actualizar solo estado de simulador (PATCH)
@@ -36,8 +32,8 @@ PATCH http://localhost:3000/api/simulators/{{id}}
 Content-Type: application/json
 
 {
-  "status": "active"
+  "status": "inactive"
 }
 
 ###eliminar simulador
-DELETE http://localhost:3000/api/simulators/45b306bf-7d5f-4199-9706-b5776d691279
+DELETE http://localhost:3000/api/simulators/{{id}}
