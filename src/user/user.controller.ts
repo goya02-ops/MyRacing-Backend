@@ -15,10 +15,9 @@ function sanitizeUserInput(req: Request, res: Response, next: NextFunction){
   next();
 }
 
-const em = orm.em.fork(); // create a new isolated EntityManager instance for this request
-
 async function getAll(req: Request, res: Response) {
   try {
+    const em = orm.em
     const users = await em.find(User, {});
     res.status(200).json({message: "Find all users", data: users});
   } catch (error: any) {
@@ -28,6 +27,7 @@ async function getAll(req: Request, res: Response) {
 
 async function getOne(req: Request, res: Response) {
   try {
+    const em = orm.em
     const id = Number.parseInt(req.params.id)
     const user = await em.findOneOrFail(User,{ id })
     res.status(200).json({message: "User found: ", data: user})
@@ -38,6 +38,7 @@ async function getOne(req: Request, res: Response) {
 
 async function add(req: Request, res: Response) {
   try{
+    const em = orm.em
     const user = em.create(User, req.body);
     await em.flush();
     res.status(201).json({ message: "User created", data: user });
@@ -48,6 +49,7 @@ async function add(req: Request, res: Response) {
 
 async function update(req: Request, res: Response) {
   try {
+    const em = orm.em
     const id = Number.parseInt(req.params.id);
     const user = await em.findOneOrFail(User, { id });
     em.assign(user, req.body.sanitizeInput);
@@ -60,6 +62,7 @@ async function update(req: Request, res: Response) {
 
 async function remove(req: Request, res: Response) {
   try {
+    const em = orm.em
     const id = Number.parseInt(req.params.id);
     const user = await em.findOneOrFail(User, { id });
     await em.removeAndFlush(user);

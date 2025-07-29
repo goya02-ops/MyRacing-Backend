@@ -19,10 +19,9 @@ function sanitizeSimulatorInput(req: Request, res: Response, next: NextFunction)
   next();
 }
 
-const em = orm.em.fork();
-
 async function getAll(req: Request, res: Response) {
   try {
+    const em = orm.em
     const simulators = await em.find(Simulator, {});
     res.status(200).json({message: "Find all categories classes", data: simulators});
   } catch (error: any) {
@@ -33,6 +32,7 @@ async function getAll(req: Request, res: Response) {
 
 async function getOne(req: Request, res: Response) {
   try {
+    const em = orm.em
     const id = Number.parseInt(req.params.id);
     const simulator = await em.findOneOrFail(Simulator,{ id });
     res.status(200).json({message: "Simulator found: ", data: simulator});
@@ -44,6 +44,7 @@ async function getOne(req: Request, res: Response) {
 
 async function add(req: Request, res: Response) {
   try{
+    const em = orm.em
     const simulator = em.create(Simulator, req.body);
     await em.flush();
     res.status(201).json({ message: "Simulator created", data: simulator });
@@ -55,6 +56,7 @@ async function add(req: Request, res: Response) {
 
 async function update(req: Request, res: Response) {
   try {
+    const em = orm.em
     const id = Number.parseInt(req.params.id);
     const simulator = await em.findOneOrFail(Simulator, { id });
     em.assign(simulator, req.body.sanitizeInput);
@@ -66,6 +68,7 @@ async function update(req: Request, res: Response) {
 }
 async function remove(req: Request, res: Response) {
   try {
+    const em = orm.em
     const id = Number.parseInt(req.params.id);
     const simulator = await em.findOneOrFail(Simulator, { id });
     await em.removeAndFlush(simulator);

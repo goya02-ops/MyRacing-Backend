@@ -19,10 +19,9 @@ function sanitizeCircuitInput(req: Request, res: Response, next: NextFunction){
   next();
 }
 
-const em = orm.em.fork(); // create a new isolated EntityManager instance for this request
-
 async function getAll(req: Request, res: Response) {
   try {
+    const em = orm.em
     const circuits = await em.find(Circuit, {});
     res.status(200).json({message: "Find all circuits classes", data: circuits});
   } catch (error: any) {
@@ -32,6 +31,7 @@ async function getAll(req: Request, res: Response) {
 
 async function getOne(req: Request, res: Response) {
   try {
+    const em = orm.em
     const id = Number.parseInt(req.params.id)
     const circuit = await em.findOneOrFail(Circuit,{ id })
     res.status(200).json({message: "Circuit found: ", data: circuit})
@@ -42,6 +42,7 @@ async function getOne(req: Request, res: Response) {
 
 async function add(req: Request, res: Response) {
   try{
+    const em = orm.em
     const circuit = em.create(Circuit, req.body);
     await em.flush();
     res.status(201).json({ message: "Circuit class created", data: circuit });
@@ -52,6 +53,7 @@ async function add(req: Request, res: Response) {
 
 async function update(req: Request, res: Response) {
   try {
+    const em = orm.em
     const id = Number.parseInt(req.params.id);
     const circuit = await em.findOneOrFail(Circuit, { id });
     em.assign(circuit, req.body.sanitizeInput);
@@ -64,6 +66,7 @@ async function update(req: Request, res: Response) {
 
 async function remove(req: Request, res: Response) {
   try {
+    const em = orm.em
     const id = Number.parseInt(req.params.id);
     const circuit = await em.findOneOrFail(Circuit, { id });
     await em.removeAndFlush(circuit);
