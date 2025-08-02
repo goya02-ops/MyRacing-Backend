@@ -44,7 +44,7 @@ async function add(req: Request, res: Response) {
   try{
     const circuit_version = em.create(Circuit_Version, req.body);
     await em.flush();
-    res.status(201).json({ message: "Circuit_Version class created", data: circuit_version });
+    res.status(201).json({ message: "Circuit_Version class created", data: circuit_version});
   } catch (error: any) {
     res.status(500).json({ data: error.message });
   }
@@ -67,7 +67,7 @@ async function remove(req: Request, res: Response) {
     const id = Number.parseInt(req.params.id);
     const circuit_version = await em.findOneOrFail(Circuit_Version, { id });
     await em.removeAndFlush(circuit_version);
-    res.status(200).json({ message: "Circuit_Version class deleted", data: circuit_version});
+    res.status(200).json({ message: "Circuit_Version class deleted", data: circuit_version });
   } catch (error: any) {
     res.status(500).json({ data: error.message });
   }

@@ -17,6 +17,6 @@ export class Circuit_Version extends BaseEntity {
   @Property({nullable: false})
   status!: string
 
-//  @ManyToMany(() => Circuit_VersionVersion, { nullable: true})
+//  @OneToMany(() => Circuit_VersionVersion, { nullable: true})
 //  circuit_versionVersions: Rel<Circuit_VersionVersion>;
 }
