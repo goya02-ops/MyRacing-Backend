@@ -19,10 +19,9 @@ function sanitizeCategoryInput(req: Request, res: Response, next: NextFunction){
   next();
 }
 
-const em = orm.em.fork(); // create a new isolated EntityManager instance for this request
-
 async function getAll(req: Request, res: Response) {
   try {
+    const em = orm.em;
     const categories = await em.find(Category, {});
     res.status(200).json({message: "Find all categories classes", data: categories});
   } catch (error: any) {
@@ -32,6 +31,7 @@ async function getAll(req: Request, res: Response) {
 
 async function getOne(req: Request, res: Response) {
   try {
+    const em = orm.em;
     const id = Number.parseInt(req.params.id)
     const category = await em.findOneOrFail(Category,{ id })
     res.status(200).json({message: "Category found: ", data: category})
@@ -42,6 +42,7 @@ async function getOne(req: Request, res: Response) {
 
 async function add(req: Request, res: Response) {
   try{
+    const em = orm.em;
     const category = em.create(Category, req.body);
     await em.flush();
     res.status(201).json({ message: "Category class created", data: category });
@@ -52,6 +53,7 @@ async function add(req: Request, res: Response) {
 
 async function update(req: Request, res: Response) {
   try {
+    const em = orm.em;
     const id = Number.parseInt(req.params.id);
     const category = await em.findOneOrFail(Category, { id });
     em.assign(category, req.body.sanitizeInput);
@@ -64,6 +66,7 @@ async function update(req: Request, res: Response) {
 
 async function remove(req: Request, res: Response) {
   try {
+    const em = orm.em;
     const id = Number.parseInt(req.params.id);
     const category = await em.findOneOrFail(Category, { id });
     await em.removeAndFlush(category);

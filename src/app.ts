@@ -1,6 +1,10 @@
 import 'reflect-metadata'
 import express from "express";
 import { categoryRouter } from "./category/category.routes.js";
+
+import { circuitRouter } from "./circuit/circuit.routes.js";
+import { userRouter } from "./user/user.routes.js";
+import { simulatorRouter } from './simulator/simulator.routes.js';
 import { orm, syncSchema } from './shared/orm.js';
 import { RequestContext } from '@mikro-orm/core';
 import { Circuit_VersionController as controller } from "./circuit_version/circuit_version.controller.js"; 
@@ -18,6 +22,9 @@ app.use((req, res, next) => {
 
 app.use("/api/categories", categoryRouter);
 app.use("/api/circuit_versions", circuit_versionRouter);
+app.use("/api/circuits", circuitRouter);
+app.use("/api/users", userRouter);
+app.use("/api/simulators", simulatorRouter);
 
 
 app.use((_, res) => {
