@@ -1,7 +1,7 @@
-import { Entity, ManyToOne, Property, Rel } from '@mikro-orm/core';
+import { Entity, OneToMany, Property, Cascade, Collection } from '@mikro-orm/core';
 import { BaseEntity } from '../shared/baseEntity.js';
 //import { CategoryVersion } from '../categoryVersion/categoryVersion.entity.js';
-//import { CircuitVersion } from '../circuitVersion/circuitVersion.entity.js';
+import { Circuit_version } from '../circuit_version/circuit_version.entity.js';
 
 @Entity()
 export class Simulator extends BaseEntity {
@@ -12,9 +12,14 @@ export class Simulator extends BaseEntity {
   @Property({ nullable: false })
   status?: string;  
 
-  //@ManyToOne(() => CategoryVersion, { nullable: true})
-  //categoryVersions = Rel<CategoryVersion>;
-
-  //@ManyToOne(() => CirtcuitVersion, { nullable: true})
-  //circuitVersions = Rel<CircuitVersion>;
+  @OneToMany(() => Circuit_version, (circuit_version) => circuit_version.simulator,{
+    cascade: [Cascade.ALL] 
+  })
+  circuit_versions = new Collection<Circuit_version>(this);
+/*
+  @OneToMany(() => Category_version, (category_version) => category_version.simulator,{
+    cascade: [Cascade.ALL] 
+  })
+  category_versions = new Collection<Category_version>(this);
+*/
 }

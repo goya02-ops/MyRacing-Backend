@@ -1,0 +1,42 @@
+###obtener versiones de circuito
+GET http://localhost:3000/api/circuit_versions
+
+###crear versión de circuito
+# @name createCircuitVersion
+POST http://localhost:3000/api/circuit_versions
+Content-Type: application/json
+
+{
+  "simulator": "1",
+  "circuit": "1",
+  "status": "active"
+}
+
+### ID
+@id = {{createCircuitVersion.response.body.data.id}}
+
+###obtener versión de circuito por id
+GET http://localhost:3000/api/circuit_versions/{{id}}
+
+
+###actualizar versión de circuito (PUT)
+PUT http://localhost:3000/api/circuit_versions/{{id}}
+Content-Type: application/json
+
+{
+  "denomination": "Version 1",
+  "description": "Descripción actualizada de la veriosn del circuito numero 1",
+  "abbreviation": "V1",
+  "status": "inactive"
+}
+
+###actualizar solo estado de version del circuito (PATCH)
+PATCH http://localhost:3000/api/circuit_versions/{{id}}
+Content-Type: application/json  
+
+{
+  "status": "active"
+}
+
+###eliminar versión de circuito
+DELETE http://localhost:3000/api/circuit_version/45b306bf-7d5f-4199-9706-b5776d691279
