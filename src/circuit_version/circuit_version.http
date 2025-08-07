@@ -7,9 +7,8 @@ POST http://localhost:3000/api/circuit_versions
 Content-Type: application/json
 
 {
-  "name": "Version 1",
-  "description": "Primera versión del circuito",
-  "abbreviation": "V1",
+  "simulator": "1",
+  "circuit": "1",
   "status": "active"
 }
 

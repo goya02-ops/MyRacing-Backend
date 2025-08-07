@@ -1,22 +1,17 @@
-import { Entity, Property, ManyToMany, Cascade, Collection, Rel } from '@mikro-orm/core';
+import { Entity, Property, ManyToOne, Rel } from '@mikro-orm/core';
 import { BaseEntity } from '../shared/baseEntity.js';
-//import { Circuit_VersionVersion } from './circuit_versionVersion.entity.js';
+import { Circuit } from '../circuit/circuit.entity.js';
+import { Simulator } from '../simulator/simulator.entity.js';
 
 @Entity()
-export class Circuit_Version extends BaseEntity {
-
-  @Property({ nullable: false })
-  name!: string
-
-  @Property({nullable: false})
-  description!: string
-
-  @Property({nullable: false})
-  abbreviation!: string
+export class Circuit_version extends BaseEntity {
 
   @Property({nullable: false})
   status!: string
 
-//  @OneToMany(() => Circuit_VersionVersion, { nullable: true})
-//  circuit_versionVersions: Rel<Circuit_VersionVersion>;
+  @ManyToOne(() => Circuit, { nullable: true})
+  circuit!: Rel<Circuit>;
+
+  @ManyToOne(() => Simulator, { nullable: true})
+  simulator!: Rel<Circuit>;
 }
