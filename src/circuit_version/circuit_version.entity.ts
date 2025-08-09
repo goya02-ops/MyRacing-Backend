@@ -9,9 +9,9 @@ export class Circuit_version extends BaseEntity {
   @Property({nullable: false})
   status!: string
 
-  @ManyToOne(() => Circuit, { nullable: true})
+  @ManyToOne(() => Circuit, { nullable: false})
   circuit!: Rel<Circuit>;
 
-  @ManyToOne(() => Simulator, { nullable: true})
-  simulator!: Rel<Circuit>;
+  @ManyToOne(() => Simulator, { nullable: false})
+  simulator!: Rel<Simulator>;
 }
