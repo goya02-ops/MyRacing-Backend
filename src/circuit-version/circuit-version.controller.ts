@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { CircuitVersion } from "./circuit_version.entity.js";
+import { CircuitVersion } from "./circuit-version.entity.js";
 import { orm } from "../shared/orm.js";
 
 

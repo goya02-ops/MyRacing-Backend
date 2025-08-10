@@ -1,4 +1,4 @@
-import { CategoryVersionController as controller } from "./version-category.controller.js";
+import { CategoryVersionController as controller } from "./category-version.controller.js";
 import {Router} from "express"
 
 export const categoryVersionRouter =  Router() //Por mas que diga export, es 

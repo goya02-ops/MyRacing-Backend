@@ -1,7 +1,7 @@
 import { Entity, OneToMany, Property, Cascade, Collection } from '@mikro-orm/core';
 import { BaseEntity } from '../shared/baseEntity.js';
-import { CategoryVersion } from '../version_category/version-category.entity.js';
-import { CircuitVersion } from '../circuit_version/circuit_version.entity.js';
+import { CategoryVersion } from '../category-version/category-version.entity.js';
+import { CircuitVersion } from '../circuit-version/circuit-version.entity.js';
 
 @Entity()
 export class Simulator extends BaseEntity {

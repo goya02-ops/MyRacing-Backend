@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { CategoryVersion } from "./version-category.entity.js";
+import { CategoryVersion } from "./category-version.entity.js";
 import { orm } from "../shared/orm.js";
 
 function sanitizeCategoryVersionInput(req: Request, res: Response, next:NextFunction) {

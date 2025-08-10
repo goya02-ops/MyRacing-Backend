@@ -1,6 +1,6 @@
 import { Entity, Property, Cascade, Collection, OneToMany } from '@mikro-orm/core';
 import { BaseEntity } from '../shared/baseEntity.js';
-import { CircuitVersion } from '../circuit_version/circuit_version.entity.js';
+import { CircuitVersion } from '../circuit-version/circuit-version.entity.js';
 
 @Entity()
 export class Circuit extends BaseEntity {

@@ -1,4 +1,4 @@
-import { CircuitVersionController as controller } from "./circuit_version.controller.js";
+import { CircuitVersionController as controller } from "./circuit-version.controller.js";
 import { Router } from "express";
 
 export const circuitVersionRouter = Router();
