@@ -7,8 +7,8 @@ import { userRouter } from "./user/user.routes.js";
 import { simulatorRouter } from './simulator/simulator.routes.js';
 import { orm, syncSchema } from './shared/orm.js';
 import { RequestContext } from '@mikro-orm/core';
-import { categoryVersionRouter } from './version_category/version-category.routes.js';
-import { circuitVersionRouter } from "./circuit_version/circuit_version.routes.js";
+import { categoryVersionRouter } from './category-version/category-version.routes.js';
+import { circuitVersionRouter } from "./circuit-version/circuit-version.routes.js";
 
 const app = express();
 app.use(express.json());
@@ -24,8 +24,8 @@ app.use("/api/categories", categoryRouter);
 app.use("/api/circuits", circuitRouter);
 app.use("/api/simulators", simulatorRouter);
 app.use("/api/users", userRouter);
-app.use("/api/circuit_versions", circuitVersionRouter);
-app.use("/api/version-categories", categoryVersionRouter);
+app.use("/api/circuits-versions", circuitVersionRouter);
+app.use("/api/categories-version", categoryVersionRouter);
 
 
 app.use((_, res) => {
