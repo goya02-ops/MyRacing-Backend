@@ -14,9 +14,6 @@ export class Category extends BaseEntity {
   @Property({nullable: false})
   abbreviation!: string
 
-  @Property({nullable: false})
-  status!: string
-
 //  @ManyToOne(() => CategoryVersion, { nullable: true})
 //  categoryVersions: Rel<CategoryVersion>;
 }

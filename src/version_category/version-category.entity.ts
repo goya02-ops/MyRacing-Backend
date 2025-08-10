@@ -9,11 +9,11 @@ import { Simulator } from "../simulator/simulator.entity.js";
 export class VersionCategory extends BaseEntity {
 
     @Property({nullable: false})
-    descripcion!: string;
+    status!: string;
 
     @ManyToOne(() => Category, {nullable: false})
-    categoria!: Rel<Category>;
+    category!: Rel<Category>;
     @ManyToOne(() => Simulator, {nullable:false})
-    simulador!: Rel<Simulator>
+    simulator!: Rel<Simulator>
 
 }
