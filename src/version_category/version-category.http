@@ -1,0 +1,65 @@
+### Crear simulador (pre-requisito)
+# @name createSimulator
+POST http://localhost:3000/api/simulators
+Content-Type: application/json
+
+{
+    "descripcion": "Simulador de pruebas",
+    "name": "Simulador num1",
+    "status": "active"
+}
+
+### Crear categoria (pre-requisito)
+# @name createCategoria
+POST http://localhost:3000/api/categories
+Content-Type: application/json
+
+{
+    "name": "Categoria num1",
+    "description": "Categoria de pruebas",
+    "abbreviation": "C1",
+    "status": "activa"
+}
+
+### Ahora sus IDs
+@simuladorId = {{createSimulator.response.body.data.id}}
+@categoriaId = {{createCategoria.response.body.data.id}}
+
+### Obtener todas las version-category
+GET http://localhost:3000/api/version-categories
+
+### Crear una version de categoria
+# @name createVersionCategory
+POST http://localhost:3000/api/version-categories
+Content-Type: application/json
+
+{
+    "status": "active",
+    "simulator": "1",
+    "category": "1"
+}
+
+### ID de la version de categoria
+@id = {{createVersionCategory.response.body.data.id}}
+
+### Obtener una det version
+GET http://localhost:3000/api/version-categories/1
+
+### Act con PUT una version de cat
+PUT http://localhost:3000/api/version-categories/2
+Content-Type: application/json
+
+{
+    "status": "inactive"
+}
+
+### Actualizamos solo el sim de la version
+PATCH http://localhost:3000/api/version-categories/{{id}}
+Content-Type: application/json
+
+{
+    "status": "active"
+}
+
+### Eliminamos version de categoria
+DELETE http://localhost:3000/api/version-categories/{{id}}

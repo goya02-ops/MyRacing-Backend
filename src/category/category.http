@@ -17,7 +17,7 @@ Content-Type: application/json
 @id = {{createCategory.response.body.data.id}}
 
 ###obtener categoría por id
-GET http://localhost:3000/api/categories/{{id}}
+GET http://localhost:3000/api/categories/1
 
 
 ###actualizar categoría (PUT)
@@ -28,7 +28,6 @@ Content-Type: application/json
   "denomination": "Formula 1",
   "description": "Descripción actualizada de la categoría F1",
   "abbreviation": "F1",
-  "status": "inactive"
 }
 
 ###actualizar solo estado de categoría (PATCH)

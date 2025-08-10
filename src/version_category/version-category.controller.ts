@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from "express";
-import { VersionCategory } from "./version-category.entity.js";
+import { CategoryVersion } from "./version-category.entity.js";
 import { orm } from "../shared/orm.js";
 
-function sanitizeVersionCategoryInput(req: Request, res: Response, next:NextFunction) {
+function sanitizeCategoryVersionInput(req: Request, res: Response, next:NextFunction) {
     //Esto lo que hace es limpiar los datos que llegan 
     req.body.sanitizeInput = {
         status: req.body.status,
@@ -21,9 +21,9 @@ function sanitizeVersionCategoryInput(req: Request, res: Response, next:NextFunc
 async function getAll(req:Request, res:Response) { //Obtiene todas las versiones de categoria
     try {
         const em = orm.em;
-        const versionCategories = await em.find(VersionCategory, {}, { populate: [ 'simulator', 'category']});
-        //Basicamente traemos los registros de VersionCategory y ademas los obj completos de sim y cat
-        res.status(200).json({message: "Find all Version Categories", data: versionCategories});
+        const categoryVersions = await em.find(CategoryVersion, {}, { populate: [ 'simulator', 'category']});
+        //Basicamente traemos los registros de CategoryVersion y ademas los obj completos de sim y cat
+        res.status(200).json({message: "Find all Categories Version", data: categoryVersions});
     } catch (error: any) {
         res.status(500).json({ data: error.message});
     }
@@ -33,8 +33,8 @@ async function getOne(req:Request, res:Response) {
     try {
         const em = orm.em;
         const id = Number.parseInt(req.params.id);
-        const versionCategory = await em.findOneOrFail(VersionCategory, { id }, {populate: ['simulator', 'category']});
-        res.status(200).json({message: "Version Category found", data: versionCategory});
+        const categoryVersion = await em.findOneOrFail(CategoryVersion, { id }, {populate: ['simulator', 'category']});
+        res.status(200).json({message: "Category Version found", data: categoryVersion});
     } catch (error:any){
         res.status(500).json({ data: error.message});
         
@@ -44,9 +44,9 @@ async function getOne(req:Request, res:Response) {
 async function add(req:Request, res:Response) {
     try {
         const em = orm.em;
-        const versionCategory = em.create(VersionCategory, req.body);
+        const categoryVersion = em.create(CategoryVersion, req.body);
         await em.flush(); //El em.create la crea en memoria y em.flush realiza el insert
-        res.status(201).json({ message: "Version Category created", data: versionCategory});
+        res.status(201).json({ message: "Category Version created", data: categoryVersion});
     } catch (error:any) {
         res.status(500).json({ data: error.message});
     }
@@ -56,10 +56,10 @@ async function update(req:Request, res: Response) {
     try {
         const em = orm.em;
         const id = Number.parseInt(req.params.id); //Obtengo id
-        const versionCategory = await em.findOneOrFail(VersionCategory, { id });
-        em.assign(versionCategory, req.body); //Asignar los nuevos datos a la entidad que ya existe
+        const categoryVersion = await em.findOneOrFail(CategoryVersion, { id });
+        em.assign(CategoryVersion, req.body); //Asignar los nuevos datos a la entidad que ya existe
         await em.flush(); //Ejecuta el update
-        res.status(200).json({ message: 'Version Category updated', data: versionCategory});
+        res.status(200).json({ message: 'Category Version updated', data: categoryVersion});
     } catch (error:any) {
         res.status(500).json({ data: error.message});
     }
@@ -69,17 +69,17 @@ async function remove(req: Request, res: Response) {
     try { 
         const em = orm.em;
         const id = Number.parseInt(req.params.id); //A que se refiere que lo toma de la URL, como sabe cual quiero
-        const versionCategory = await em.findOneOrFail(VersionCategory, {id});
-        await em.removeAndFlush(versionCategory);
-        res.status(200).json({ message: "Version category deleted", data: versionCategory});
+        const categoryVersion = await em.findOneOrFail(CategoryVersion, {id});
+        await em.removeAndFlush(CategoryVersion);
+        res.status(200).json({ message: "Category Version deleted", data: categoryVersion});
 
     } catch (error:any) {
         res.status(500).json({ data: error.message});
     }
 }
 
-export const VersionCategoryController = {
-    sanitizeVersionCategoryInput,
+export const CategoryVersionController = {
+    sanitizeCategoryVersionInput,
     getAll,
     getOne,
     add,

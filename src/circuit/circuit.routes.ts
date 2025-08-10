@@ -1,4 +1,4 @@
-import { Circuitcontroller as controller } from "./circuit.controller.js";
+import { CircuitController as controller } from "./circuit.controller.js";
 import { Router } from "express";
 
 export const circuitRouter = Router();

@@ -10,7 +10,6 @@ function sanitizeCircuitInput(req: Request, res: Response, next: NextFunction){
     description: req.body.description,
     abbreviation: req.body.abbreviation,
     status: req.body.status,
-    circuit_versions: req.body.circuit_versions, 
   };
 
   Object.keys(req.body.sanitizeInput).forEach((key) => {
@@ -23,7 +22,7 @@ function sanitizeCircuitInput(req: Request, res: Response, next: NextFunction){
 async function findAll(req: Request, res: Response) {
   try {
     const em = orm.em
-    const circuits = await em.find(Circuit, {}, { populate: ["circuit_versions"] });
+    const circuits = await em.find(Circuit, {}, { populate: ["circuitVersions"] });
     res.status(200).json({message: "Find all circuits classes", data: circuits});
   } catch (error: any) {
     res.status(500).json({ data: error.message });
@@ -34,7 +33,7 @@ async function findOne(req: Request, res: Response) {
   try {
     const em = orm.em
     const id = Number.parseInt(req.params.id)
-    const circuit = await em.findOneOrFail(Circuit,{ id }, { populate: ["circuit_versions"] });
+    const circuit = await em.findOneOrFail(Circuit,{ id }, { populate: ["circuitVersions"] });
     res.status(200).json({message: "Circuit found: ", data: circuit})
   } catch (error: any) {
     res.status(500).json({ data: error.message })
@@ -77,7 +76,7 @@ async function remove(req: Request, res: Response) {
   }
 }
 
-export const Circuitcontroller = {
+export const CircuitController = {
   sanitizeCircuitInput,
   findAll,
   findOne,

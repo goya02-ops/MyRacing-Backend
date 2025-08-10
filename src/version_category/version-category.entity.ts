@@ -6,7 +6,7 @@ import { Category } from "../category/category.entity.js";
 import { Simulator } from "../simulator/simulator.entity.js";
 
 @Entity()
-export class VersionCategory extends BaseEntity {
+export class CategoryVersion extends BaseEntity {
 
     @Property({nullable: false})
     status!: string;

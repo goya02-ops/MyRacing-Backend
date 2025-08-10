@@ -1,9 +1,9 @@
 import { Request, Response, NextFunction } from "express";
-import { Circuit_version } from "./circuit_version.entity.js";
+import { CircuitVersion } from "./circuit_version.entity.js";
 import { orm } from "../shared/orm.js";
 
 
-function sanitizeCircuit_VersionInput(req: Request, res: Response, next: NextFunction){
+function sanitizeCircuitVersionInput(req: Request, res: Response, next: NextFunction){
 
   req.body.sanitizeInput = {
     status: req.body.status,
@@ -22,10 +22,10 @@ function sanitizeCircuit_VersionInput(req: Request, res: Response, next: NextFun
 async function findAll(req: Request, res: Response) {
   try {
     const em = orm.em;
-    const circuit_versions = await em.find(Circuit_version, {},{
+    const circuitVersions = await em.find(CircuitVersion, {},{
       populate: ['circuit', 'simulator']
     });
-    res.status(200).json({message: "Find all circuit_versions classes", data: circuit_versions});
+    res.status(200).json({message: "Find all circuit_versions classes", data: circuitVersions});
   } catch (error: any) {
     res.status(500).json({ data: error.message });
   }
@@ -35,10 +35,10 @@ async function findOne(req: Request, res: Response) {
   try {
     const em = orm.em;
     const id = Number.parseInt(req.params.id)
-    const circuit_version = await em.findOneOrFail(Circuit_version, { id }, {
+    const circuitVersion = await em.findOneOrFail(CircuitVersion, { id }, {
       populate: ['circuit', 'simulator']
     });
-    res.status(200).json({message: "Circuit_Version found: ", data: circuit_version})
+    res.status(200).json({message: "Circuit_Version found: ", data: circuitVersion})
   } catch (error: any) {
     res.status(500).json({ data: error.message })
   }
@@ -47,9 +47,9 @@ async function findOne(req: Request, res: Response) {
 async function add(req: Request, res: Response) {
   try{
     const em = orm.em;
-    const circuit_version = em.create(Circuit_version, req.body);
+    const circuitVersion = em.create(CircuitVersion, req.body);
     await em.flush();
-    res.status(201).json({ message: "Circuit_Version class created", data: circuit_version});
+    res.status(201).json({ message: "CircuitVersion class created", data: circuitVersion});
   } catch (error: any) {
     res.status(500).json({ data: error.message });
   }
@@ -59,10 +59,10 @@ async function update(req: Request, res: Response) {
   try {
     const em = orm.em;
     const id = Number.parseInt(req.params.id);
-    const circuit_version = await em.findOneOrFail(Circuit_version, { id });
-    em.assign(circuit_version, req.body.sanitizeInput);
+    const circuitVersion = await em.findOneOrFail(CircuitVersion, { id });
+    em.assign(circuitVersion, req.body.sanitizeInput);
     await em.flush();
-    res.status(200).json({ message: "Circuit_Version updated", data: circuit_version });
+    res.status(200).json({ message: "Circuit_Version updated", data: circuitVersion });
   } catch (error:any) {
     res.status(500).json({ data: error.message });
   }
@@ -72,16 +72,16 @@ async function remove(req: Request, res: Response) {
   try {
     const em = orm.em;
     const id = Number.parseInt(req.params.id);
-    const circuit_version = em.getReference(Circuit_version, id);
-    await em.removeAndFlush(circuit_version);
-    res.status(200).json({ message: "Circuit_Version class deleted", data: circuit_version });
+    const circuitVersion = em.getReference(CircuitVersion, id);
+    await em.removeAndFlush(circuitVersion);
+    res.status(200).json({ message: "CircuitVersion class deleted", data: circuitVersion });
   } catch (error: any) {
     res.status(500).json({ data: error.message });
   }
 }
 
-export const Circuit_versionController = {
-  sanitizeCircuit_VersionInput,
+export const CircuitVersionController = {
+  sanitizeCircuitVersionInput,
   findAll,
   findOne,
   add,

@@ -4,7 +4,7 @@ import { Circuit } from '../circuit/circuit.entity.js';
 import { Simulator } from '../simulator/simulator.entity.js';
 
 @Entity()
-export class Circuit_version extends BaseEntity {
+export class CircuitVersion extends BaseEntity {
 
   @Property({nullable: false})
   status!: string

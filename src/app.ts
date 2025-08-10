@@ -7,9 +7,8 @@ import { userRouter } from "./user/user.routes.js";
 import { simulatorRouter } from './simulator/simulator.routes.js';
 import { orm, syncSchema } from './shared/orm.js';
 import { RequestContext } from '@mikro-orm/core';
-import { Circuit_versionController as controller } from "./circuit_version/circuit_version.controller.js"; 
-import { versionCategoryRouter } from './version_category/version-category.routes.js';
-import { circuit_versionRouter } from "./circuit_version/circuit_version.routes.js";
+import { categoryVersionRouter } from './version_category/version-category.routes.js';
+import { circuitVersionRouter } from "./circuit_version/circuit_version.routes.js";
 
 const app = express();
 app.use(express.json());
@@ -22,12 +21,11 @@ app.use((req, res, next) => {
 //antes de las rutas y de los middleware de negocio
 
 app.use("/api/categories", categoryRouter);
-app.use("/api/circuit_versions", circuit_versionRouter);
 app.use("/api/circuits", circuitRouter);
-app.use("/api/users", userRouter);
 app.use("/api/simulators", simulatorRouter);
-app.use("/api/circuit_versions", circuit_versionRouter);
-app.use("/api/version-categories", versionCategoryRouter);
+app.use("/api/users", userRouter);
+app.use("/api/circuit_versions", circuitVersionRouter);
+app.use("/api/version-categories", categoryVersionRouter);
 
 
 app.use((_, res) => {

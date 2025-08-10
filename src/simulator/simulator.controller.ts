@@ -1,18 +1,14 @@
-
 import { Request, Response, NextFunction } from "express";
 import { Simulator } from "./simulator.entity.js";
 import { orm } from '../shared/orm.js';
-import { circuitRouter } from "../circuit/circuit.routes.js";
 
-1
+
 
 function sanitizeSimulatorInput(req: Request, res: Response, next: NextFunction){
 
   req.body.sanitizeInput = {
     name: req.body.name,
     status: req.body.status,
-    // category_versions: req.body.category_versions,
-    cirtcuit_versions: req.body.circuit_versions
   };
 
   Object.keys(req.body.sanitizeInput).forEach((key) => {
@@ -25,7 +21,7 @@ function sanitizeSimulatorInput(req: Request, res: Response, next: NextFunction)
 async function findAll(req: Request, res: Response) {
   try {
     const em = orm.em
-    const simulators = await em.find(Simulator, {}, { populate: ['circuit_versions']  });
+    const simulators = await em.find(Simulator, {});
     res.status(200).json({message: "Find all categories classes", data: simulators});
   } catch (error: any) {
     res.status(500).json({ data: error.message });
@@ -37,7 +33,7 @@ async function findOne(req: Request, res: Response) {
   try {
     const em = orm.em
     const id = Number.parseInt(req.params.id);
-    const simulator = await em.findOneOrFail(Simulator,{ id }, {  populate: ['circuit_versions'] });
+    const simulator = await em.findOneOrFail(Simulator,{ id });
     res.status(200).json({message: "Simulator found: ", data: simulator});
   } catch (error: any) {
     res.status(500).json({ data: error.message });
