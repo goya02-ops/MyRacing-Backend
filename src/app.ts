@@ -1,14 +1,16 @@
 import 'reflect-metadata'
 import express from "express";
+import { orm, syncSchema } from './shared/orm.js';
+import { RequestContext } from '@mikro-orm/core';
+
 import { categoryRouter } from "./category/category.routes.js";
 import { circuitRouter } from "./circuit/circuit.routes.js";
 import { userRouter } from "./user/user.routes.js";
 import { simulatorRouter } from './simulator/simulator.routes.js';
-import { orm, syncSchema } from './shared/orm.js';
-import { RequestContext } from '@mikro-orm/core';
 import { categoryVersionRouter } from './category-version/category-version.routes.js';
 import { circuitVersionRouter } from "./circuit-version/circuit-version.routes.js";
 import { membershipRouter } from './membership/membership.routes.js';
+
 
 const app = express();
 app.use(express.json());
