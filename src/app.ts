@@ -8,7 +8,7 @@ import { orm, syncSchema } from './shared/orm.js';
 import { RequestContext } from '@mikro-orm/core';
 import { categoryVersionRouter } from './category-version/category-version.routes.js';
 import { circuitVersionRouter } from "./circuit-version/circuit-version.routes.js";
-import { membresiaRouter } from './membresia/membresia.routes.js';
+import { membershipRouter } from './membership/membership.routes.js';
 
 const app = express();
 app.use(express.json());
@@ -25,7 +25,7 @@ app.use("/api/simulators", simulatorRouter);
 app.use("/api/users", userRouter);
 app.use("/api/circuits-versions", circuitVersionRouter);
 app.use("/api/categories-version", categoryVersionRouter);
-app.use("/api/membresias", membresiaRouter);
+app.use("/api/membership", membershipRouter);
 
 // Middleware 404 debe ir AL FINAL, después de todas las rutas
 app.use((_, res) => {
