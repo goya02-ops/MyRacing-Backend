@@ -1,0 +1,74 @@
+### Crear versión de categoría (pre-requisito)
+# @name createCategoryVersion
+POST http://localhost:3000/api/categories-version
+Content-Type: application/json
+
+{
+  "status": "active",
+  "simulator": 1,
+  "category": 1
+}
+
+### Crear versión de circuito (pre-requisito)
+# @name createCircuitVersion
+POST http://localhost:3000/api/circuits-versions
+Content-Type: application/json
+
+{
+  "status": "active",
+  "simulator": 1,
+  "circuit": 1
+}
+
+### IDs de las versiones para las pruebas
+@versionCategoryId = {{createCategoryVersion.response.body.data.id}}
+@versionCircuitId = {{createCircuitVersion.response.body.data.id}}
+
+### Obtener todas las combinaciones
+GET http://localhost:3000/api/combinations
+
+### Crear combinación
+# @name createCombination
+POST http://localhost:3000/api/combinations
+Content-Type: application/json
+
+{
+  "dateFrom": "2025-08-01",
+  "dateTo": "2025-08-31",
+  "lapsNumber": 10,
+  "obligatoryStopsQuantity": 2,
+  "userType": "premium",
+  "versionCategoryId": {{versionCategoryId}},
+  "versionCircuitId": {{versionCircuitId}}
+}
+
+### ID de la combinación
+@id = {{createCombination.response.body.data.id}}
+
+### Obtener una combinación por ID
+GET http://localhost:3000/api/combinations/{{id}}
+
+### Actualizar una combinación
+PUT http://localhost:3000/api/combinations/{{id}}
+Content-Type: application/json
+
+{
+  "dateFrom": "2025-09-01",
+  "dateTo": "2025-09-30",
+  "lapsNumber": 15,
+  "obligatoryStopsQuantity": 3,
+  "userType": "administrador",
+  "versionCategoryId": {{versionCategoryId}},
+  "versionCircuitId": {{versionCircuitId}}
+}
+
+### Actualizar solo el número de vueltas de la combinación
+PATCH http://localhost:3000/api/combinations/{{id}}
+Content-Type: application/json
+
+{
+  "lapsNumber": 20
+}
+
+### Eliminar una combinación
+DELETE http://localhost:3000/api/combinations/{{id}}

@@ -1,9 +1,10 @@
 //Definimos la clase version categoria
 
-import { Entity, Property, ManyToOne, Rel } from "@mikro-orm/core";
+import { Entity, Property, ManyToOne, Rel, OneToMany, Collection, Cascade } from "@mikro-orm/core";
 import { BaseEntity } from  "../shared/baseEntity.js";
 import { Category } from "../category/category.entity.js";
 import { Simulator } from "../simulator/simulator.entity.js";
+import { Combination } from "../combination/combination.entity.js";
 
 @Entity()
 export class CategoryVersion extends BaseEntity {
@@ -15,5 +16,8 @@ export class CategoryVersion extends BaseEntity {
     category!: Rel<Category>;
     @ManyToOne(() => Simulator, {nullable:false})
     simulator!: Rel<Simulator>
-
+    @OneToMany(() => Combination, (combination) => combination.versionCategory,{
+        cascade: [Cascade.ALL] 
+    })
+    combinations = new Collection<Combination>(this);
 }

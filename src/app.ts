@@ -9,6 +9,7 @@ import { orm, syncSchema } from './shared/orm.js';
 import { RequestContext } from '@mikro-orm/core';
 import { categoryVersionRouter } from './category-version/category-version.routes.js';
 import { circuitVersionRouter } from "./circuit-version/circuit-version.routes.js";
+import { combinationRouter } from './combination/combination.routes.js';
 
 const app = express();
 app.use(express.json());
@@ -26,6 +27,7 @@ app.use("/api/simulators", simulatorRouter);
 app.use("/api/users", userRouter);
 app.use("/api/circuits-versions", circuitVersionRouter);
 app.use("/api/categories-version", categoryVersionRouter);
+app.use("/api/combinations", combinationRouter);
 
 
 app.use((_, res) => {
