@@ -1,7 +1,8 @@
-import { Entity, Property, ManyToOne, Rel } from '@mikro-orm/core';
+import { Entity, Property, ManyToOne, OneToMany, Rel, Cascade, Collection } from '@mikro-orm/core';
 import { BaseEntity } from '../shared/baseEntity.js';
 import { Circuit } from '../circuit/circuit.entity.js';
 import { Simulator } from '../simulator/simulator.entity.js';
+import { Combination } from '../combination/combination.entity.js';
 
 @Entity()
 export class CircuitVersion extends BaseEntity {
@@ -14,4 +15,9 @@ export class CircuitVersion extends BaseEntity {
 
   @ManyToOne(() => Simulator, { nullable: false})
   simulator!: Rel<Simulator>;
+
+  @OneToMany(() => Combination, (combination) => combination.circuitVersion,{
+    cascade: [Cascade.ALL] 
+  })
+  combinations = new Collection<Combination>(this);
 }

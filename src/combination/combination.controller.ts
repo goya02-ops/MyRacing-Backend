@@ -12,8 +12,8 @@ function sanitizeCombinationInput(req: Request, res: Response, next: NextFunctio
         lapsNumber: req.body.lapsNumber,
         obligatoryStopsQuantity: req.body.obligatoryStopsQuantity,
         userType: req.body.userType,
-        versionCategory: req.body.versionCategoryId,
-        versionCircuit: req.body.versionCircuitId,
+        categoryVersion: req.body.categoryVersion,
+        circuitVersion: req.body.circuitVersion,
     };
     console.log("sanitizeInput creado:", req.body.sanitizeInput);
     Object.keys(req.body.sanitizeInput).forEach((key) => {
@@ -27,8 +27,8 @@ function sanitizeCombinationInput(req: Request, res: Response, next: NextFunctio
 async function getAll(req:Request, res:Response) {
     try {
         const em = orm.em;
-        const combinations = await em.find(Combination, {}, { populate: [ 'versionCategory', 'versionCircuit']});
-        res.status(200).json({message: "Find all Combinaciones", data: combinations});
+        const combinations = await em.find(Combination, {}, { populate: [ 'categoryVersion', 'circuitVersion']});
+        res.status(200).json({message: "Find all Combinaciones", data: combinations}); 
     } catch (error: any) {
         res.status(500).json({ data: error.message});
     }
@@ -38,7 +38,7 @@ async function getOne(req: Request, res: Response) {
     try {
         const em = orm.em;
         const id = Number.parseInt(req.params.id);    
-        const combination = await em.findOneOrFail( Combination, {id}, {populate: ['versionCategory', 'versionCircuit']})
+        const combination = await em.findOneOrFail( Combination, {id}, {populate: ['categoryVersion', 'circuitVersion']})
         res.status(200).json({message: "Combination found", data: combination});
     } catch (error: any){
         res.status(500).json({ data: error.message});

@@ -26,11 +26,11 @@ Content-Type: application/json
 @categoriaId = {{createCategoria.response.body.data.id}}
 
 ### Obtener todas las version-category
-GET http://localhost:3000/api/version-categories
+GET http://localhost:3000/api/categories-version
 
 ### Crear una version de categoria
 # @name createVersionCategory
-POST http://localhost:3000/api/version-categories
+POST http://localhost:3000/api/categories-version
 Content-Type: application/json
 
 {

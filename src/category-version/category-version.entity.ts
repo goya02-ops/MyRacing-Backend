@@ -16,7 +16,7 @@ export class CategoryVersion extends BaseEntity {
     category!: Rel<Category>;
     @ManyToOne(() => Simulator, {nullable:false})
     simulator!: Rel<Simulator>
-    @OneToMany(() => Combination, (combination) => combination.versionCategory,{
+    @OneToMany(() => Combination, (combination) => combination.categoryVersion,{
         cascade: [Cascade.ALL] 
     })
     combinations = new Collection<Combination>(this);

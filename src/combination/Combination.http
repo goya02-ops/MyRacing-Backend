@@ -38,8 +38,8 @@ Content-Type: application/json
   "lapsNumber": 10,
   "obligatoryStopsQuantity": 2,
   "userType": "premium",
-  "versionCategoryId": {{versionCategoryId}},
-  "versionCircuitId": {{versionCircuitId}}
+  "categoryVersion": "1",
+  "circuitVersion": "1"
 }
 
 ### ID de la combinación

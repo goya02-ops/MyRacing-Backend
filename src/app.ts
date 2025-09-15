@@ -26,7 +26,7 @@ app.use("/api/categories", categoryRouter);
 app.use("/api/circuits", circuitRouter);
 app.use("/api/simulators", simulatorRouter);
 app.use("/api/users", userRouter);
-app.use("/api/circuits-versions", circuitVersionRouter);
+app.use("/api/circuits-version", circuitVersionRouter);
 app.use("/api/categories-version", categoryVersionRouter);
 app.use("/api/combinations", combinationRouter);
 app.use("/api/membership", membershipRouter);

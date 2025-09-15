@@ -26,9 +26,9 @@ export class Combination extends BaseEntity {
     userType!: string;
 
     @ManyToOne(() =>CategoryVersion, {nullable: false})
-    versionCategory!: Rel<CategoryVersion>;
+    categoryVersion!: Rel<CategoryVersion>;
 
     @ManyToOne(() => CircuitVersion, {nullable: false})
-    versionCircuit!: Rel<CircuitVersion>;
+    circuitVersion!: Rel<CircuitVersion>;
 
 }

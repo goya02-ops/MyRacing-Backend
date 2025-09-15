@@ -1,9 +1,9 @@
 ###obtener versiones de circuito
-GET http://localhost:3000/api/circuit_versions
+GET http://localhost:3000/api/circuits-version
 
 ###crear versión de circuito
 # @name createCircuitVersion
-POST http://localhost:3000/api/circuit_versions
+POST http://localhost:3000/api/circuits-version
 Content-Type: application/json
 
 {
