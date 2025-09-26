@@ -5,7 +5,6 @@ import { orm } from "../shared/orm.js";
 function sanitizeRaceInput(req: Request, res: Response, next: NextFunction) {
   req.body.sanitizeInput = {
     raceDateTime: req.body.raceDateTime,
-    result: req.body.result,
     description: req.body.description,
     registrationDeadline: req.body.registrationDeadline,
     combination: req.body.combination,
