@@ -1,4 +1,4 @@
-import { Entity, Property, ManyToOne, Rel, DateTimeType } from '@mikro-orm/core';
+import { Entity, Property, ManyToOne, Rel, DateTimeType } from '@mikro-orm/mysql';
 import { BaseEntity } from '../shared/baseEntity.js';
 import { Race } from '../race/race.entity.js';
 import { User } from '../user/user.entity.js';

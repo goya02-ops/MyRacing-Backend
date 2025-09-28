@@ -1,4 +1,4 @@
-import { Entity, Property, ManyToOne, OneToMany, Rel, Cascade, Collection } from '@mikro-orm/core';
+import { Entity, Property, ManyToOne, OneToMany, Rel, Cascade, Collection } from '@mikro-orm/mysql';
 import { BaseEntity } from '../shared/baseEntity.js';
 import { Circuit } from '../circuit/circuit.entity.js';
 import { Simulator } from '../simulator/simulator.entity.js';

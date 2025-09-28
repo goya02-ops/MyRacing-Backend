@@ -1,7 +1,7 @@
 import 'reflect-metadata'
 import express from "express";
 import { orm, syncSchema } from './shared/orm.js';
-import { RequestContext } from '@mikro-orm/core';
+import { RequestContext } from '@mikro-orm/mysql';
 
 import { categoryRouter } from "./category/category.routes.js";
 import { circuitRouter } from "./circuit/circuit.routes.js";

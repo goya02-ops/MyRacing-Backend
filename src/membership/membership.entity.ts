@@ -1,4 +1,4 @@
-import { Entity, Property } from '@mikro-orm/core';
+import { Entity, Property } from '@mikro-orm/mysql';
 import { BaseEntity } from '../shared/baseEntity.js';
 
 @Entity()

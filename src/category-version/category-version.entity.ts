@@ -1,6 +1,6 @@
 //Definimos la clase version categoria
 
-import { Entity, Property, ManyToOne, Rel, OneToMany, Collection, Cascade } from "@mikro-orm/core";
+import { Entity, Property, ManyToOne, Rel, OneToMany, Collection, Cascade } from "@mikro-orm/mysql";
 import { BaseEntity } from  "../shared/baseEntity.js";
 import { Category } from "../category/category.entity.js";
 import { Simulator } from "../simulator/simulator.entity.js";
