@@ -1,0 +1,71 @@
+### Crear usuario (pre-requisito)
+# @name createUser
+POST http://localhost:3000/api/users
+Content-Type: application/json
+
+{
+  "description": "Juan Perez - Piloto",
+  "type": "premium"
+}
+
+### Crear carrera (pre-requisito)
+# @name createRace
+POST http://localhost:3000/api/races
+Content-Type: application/json
+
+{
+  "raceDateTime": "2025-09-15T14:00:00",
+  "result": "pending",
+  "description": "Gran Premio de Argentina",
+  "registrationDeadline": "2025-09-10T23:59:59",
+  "combinationId": 1
+}
+
+### IDs para las pruebas
+@userId = {{createUser.response.body.data.id}}
+@raceId = {{createRace.response.body.data.id}}
+
+### Obtener todas las inscripciones a carreras
+GET http://localhost:3000/api/race-users
+
+### Crear inscripción a carrera
+# @name createRaceUser
+POST http://localhost:3000/api/race-users
+Content-Type: application/json
+
+{
+  "registrationDateTime": "2025-09-01T10:30:00",
+  "startPosition": 5,
+  "finishPosition": 3,
+  "raceId": {{raceId}},
+  "userId": {{userId}}
+}
+
+### ID de la inscripción
+@raceUserId = {{createRaceUser.response.body.data.id}}
+
+### Obtener una inscripción por ID
+GET http://localhost:3000/api/race-users/{{raceUserId}}
+
+### Actualizar una inscripción
+PUT http://localhost:3000/api/race-users/{{raceUserId}}
+Content-Type: application/json
+
+{
+  "registrationDateTime": "2025-09-01T10:30:00",
+  "startPosition": 5,
+  "finishPosition": 1,
+  "raceId": {{raceId}},
+  "userId": {{userId}}
+}
+
+### Actualizar solo la posición final
+PATCH http://localhost:3000/api/race-users/{{raceUserId}}
+Content-Type: application/json
+
+{
+  "finishPosition": 2
+}
+
+### Eliminar una inscripción
+DELETE http://localhost:3000/api/race-users/{{raceUserId}}

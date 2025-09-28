@@ -11,7 +11,8 @@ import { categoryVersionRouter } from './category-version/category-version.route
 import { circuitVersionRouter } from "./circuit-version/circuit-version.routes.js";
 import { combinationRouter } from './combination/combination.routes.js';
 import { membershipRouter } from './membership/membership.routes.js';
-
+import { raceRouter } from './race/race.routes.js';
+import { raceUserRouter } from './race-user/race-user.routes.js';
 
 const app = express();
 app.use(express.json());
@@ -30,6 +31,8 @@ app.use("/api/circuits-version", circuitVersionRouter);
 app.use("/api/categories-version", categoryVersionRouter);
 app.use("/api/combinations", combinationRouter);
 app.use("/api/membership", membershipRouter);
+app.use("/api/races", raceRouter);
+app.use('/api/race-users', raceUserRouter);
 
 // Middleware 404 debe ir AL FINAL, después de todas las rutas
 app.use((_, res) => {

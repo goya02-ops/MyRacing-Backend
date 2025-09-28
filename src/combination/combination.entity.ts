@@ -1,9 +1,10 @@
 // Definimos la clase de Combination
 
-import { Entity, Property, ManyToOne, Rel } from "@mikro-orm/core";
+import { Entity, Property, ManyToOne, Rel, OneToMany, Cascade, Collection } from "@mikro-orm/core";
 import { BaseEntity } from '../shared/baseEntity.js';
 import { CategoryVersion } from "../category-version/category-version.entity.js";
 import { CircuitVersion} from "../circuit-version/circuit-version.entity.js";
+import { Race } from "../race/race.entity.js";
 
 
 @Entity()
@@ -30,5 +31,10 @@ export class Combination extends BaseEntity {
 
     @ManyToOne(() => CircuitVersion, {nullable: false})
     circuitVersion!: Rel<CircuitVersion>;
+
+    @OneToMany(() => Race, (race) => race.combination, {
+        cascade: [Cascade.ALL]
+    })
+    races = new Collection<Race>(this);
 
 }
