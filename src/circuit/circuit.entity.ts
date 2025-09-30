@@ -1,21 +1,26 @@
-import { Entity, Property, Cascade, Collection, OneToMany } from '@mikro-orm/mysql';
+import {
+  Entity,
+  Property,
+  Cascade,
+  Collection,
+  OneToMany,
+} from '@mikro-orm/mysql';
 import { BaseEntity } from '../shared/baseEntity.js';
 import { CircuitVersion } from '../circuit-version/circuit-version.entity.js';
 
 @Entity()
 export class Circuit extends BaseEntity {
+  @Property({ nullable: false })
+  name!: string;
 
   @Property({ nullable: false })
-  name!: string
+  description!: string;
 
-  @Property({nullable: false})
-  description!: string
+  @Property({ nullable: false })
+  abbreviation!: string;
 
-  @Property({nullable: false})
-  abbreviation!: string
-
-  @OneToMany(() => CircuitVersion, (circuitVersion) => circuitVersion.circuit,{
-    cascade: [Cascade.ALL] 
+  @OneToMany(() => CircuitVersion, (circuitVersion) => circuitVersion.circuit, {
+    cascade: [Cascade.ALL],
   })
   circuitVersions = new Collection<CircuitVersion>(this);
 }

@@ -1,4 +1,4 @@
-import { PrimaryKey, Property, DateTimeType } from "@mikro-orm/mysql";
+import { PrimaryKey, Property, DateTimeType } from '@mikro-orm/mysql';
 
 export abstract class BaseEntity {
   @PrimaryKey()

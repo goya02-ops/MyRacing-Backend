@@ -8,9 +8,6 @@ export class Race extends BaseEntity {
   @Property({ type: DateTimeType, nullable: false })
   raceDateTime!: Date;
 
-  @Property({ nullable: false })
-  description!: string;
-
   @Property({ type: DateTimeType, nullable: false })
   registrationDeadline!: Date;
 
