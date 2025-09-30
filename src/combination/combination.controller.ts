@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { Combination } from "./combination.entity.js";
-import { CategoryVersion } from "../category-version/category-version.entity.js";
-import { CircuitVersion } from "../circuit-version/circuit-version.entity.js";
+import { validateSameSimulator, validateDate } from "./combination.logic.js";
 import { orm } from "../shared/orm.js";
 
 function sanitizeCombinationInput(req: Request, res: Response, next: NextFunction) {
@@ -21,17 +20,6 @@ function sanitizeCombinationInput(req: Request, res: Response, next: NextFunctio
 
     next();
 
-}
-
-async function validateSameSimulator(idCategoryVersion: number, idCircuitVersion: number){
-    const em = orm.em;
-    const categoryVersion = await em.findOne(CategoryVersion, { id: idCategoryVersion }, { populate: ['simulator'] });
-    const circuitVersion = await em.findOne(CircuitVersion, { id: idCircuitVersion }, { populate: ['simulator'] });
-
-    if (categoryVersion && circuitVersion && categoryVersion.simulator.id === circuitVersion.simulator.id) {
-        return true;
-    }
-    return false;
 }
 
 async function getAll(req:Request, res:Response) {
@@ -60,6 +48,12 @@ async function add(req: Request, res: Response) {
         const em = orm.em;
         const idCategoryVersion = Number.parseInt(req.body.sanitizeInput.categoryVersion);
         const idCircuitVersion = Number.parseInt(req.body.sanitizeInput.circuitVersion);
+        const validDate = validateDate(req.body.sanitizeInput);
+
+        if (!validDate) {
+            res.status(400).json({ message: "dateFrom must be earlier than dateTo." });
+            return;
+        }
 
         const validSimulator = await validateSameSimulator(idCategoryVersion, idCircuitVersion);
 
@@ -83,12 +77,18 @@ async function update(req: Request, res: Response) {
         const id = Number.parseInt(req.params.id);    
         const combination = await em.findOneOrFail(Combination, { id });
 
+        if(req.body.sanitizeInput.dateFrom && req.body.sanitizeInput.dateTo) {
+            const validDate = validateDate(req.body.sanitizeInput);
+            if (!validDate) {
+                res.status(400).json({ message: "dateFrom must be earlier than dateTo." });
+                return;
+            }
+        }
+
         if (req.body.sanitizeInput.categoryVersion && req.body.sanitizeInput.circuitVersion) {
             const idCategoryVersion = Number.parseInt(req.body.sanitizeInput.categoryVersion);
             const idCircuitVersion = Number.parseInt(req.body.sanitizeInput.circuitVersion);
-
             const validSimulator = await validateSameSimulator(idCategoryVersion, idCircuitVersion);
-
             if (!validSimulator) {
                 res.status(400).json({ message: "CategoryVersion and CircuitVersion must belong to the same Simulator." });
                 return;

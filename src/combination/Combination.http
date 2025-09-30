@@ -33,13 +33,13 @@ POST http://localhost:3000/api/combinations
 Content-Type: application/json
 
 {
-  "dateFrom": "2025-08-01",
+  "dateFrom": "2025-09-01",
   "dateTo": "2025-08-31",
   "lapsNumber": 10,
   "obligatoryStopsQuantity": 2,
   "userType": "premium",
   "categoryVersion": "1",
-  "circuitVersion": "2"
+  "circuitVersion": "1"
 }
 
 ### ID de la combinación

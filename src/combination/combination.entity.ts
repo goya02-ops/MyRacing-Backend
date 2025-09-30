@@ -1,4 +1,3 @@
-// Definimos la clase de Combination
 
 import { Entity, Property, ManyToOne, Rel, OneToMany, Cascade, Collection } from "@mikro-orm/mysql";
 import { BaseEntity } from '../shared/baseEntity.js';
