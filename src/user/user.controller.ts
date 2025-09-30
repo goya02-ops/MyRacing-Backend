@@ -4,7 +4,10 @@ import { orm } from "../shared/orm.js";
 
 function sanitizeUserInput(req: Request, res: Response, next: NextFunction){
   req.body.sanitizeInput = {
-    description: req.body.description,
+    userName: req.body.userName,
+    realName: req.body.realName,
+    email: req.body.email,
+    password: req.body.password,
     type: req.body.type,
   };
 

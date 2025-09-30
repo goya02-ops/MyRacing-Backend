@@ -6,10 +6,19 @@ import { RaceUser } from '../race-user/race-user.entity.js';
 export class User extends BaseEntity {
 
   @Property({ nullable: false })
-  description!: string; // Corresponde a 'descripcion' en tu diagrama
+  userName!: string;
 
   @Property({ nullable: false })
-  type!: string; // Corresponde a 'tipo_usuario' en tu diagrama
+  realName!: string;
+
+  @Property({ nullable: false })
+  email!: string;
+  
+  @Property({ nullable: false })
+  password!: string;
+  
+  @Property({ nullable: false })
+  type!: string;
 
   @OneToMany(() => RaceUser, (raceUser) => raceUser.user, {
     cascade: [Cascade.ALL]

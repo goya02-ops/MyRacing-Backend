@@ -7,7 +7,7 @@ POST http://localhost:3000/api/circuits-version
 Content-Type: application/json
 
 {
-  "simulator": "1",
+  "simulator": "2",
   "circuit": "1",
   "status": "active"
 }

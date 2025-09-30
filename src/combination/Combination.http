@@ -39,7 +39,7 @@ Content-Type: application/json
   "obligatoryStopsQuantity": 2,
   "userType": "premium",
   "categoryVersion": "1",
-  "circuitVersion": "1"
+  "circuitVersion": "2"
 }
 
 ### ID de la combinación

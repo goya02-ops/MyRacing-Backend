@@ -7,7 +7,10 @@ POST http://localhost:3000/api/users
 Content-Type: application/json
 
 {
-  "description": "Juan Perez",
+  "userName": "Juan Perez",
+  "realName": "Juan Perez",
+  "email": "Juanperez@gmail.com",
+  "password": "password123",
   "type": "comun"
 }
 
@@ -22,7 +25,10 @@ PUT http://localhost:3000/api/users/{{id}}
 Content-Type: application/json
 
 {
-  "description": "Juan Perez Actualizado",
+  "userName": "Juan Perez",
+  "realName": "Juan Perez",
+  "email": "Juanperez@gmail.com",
+  "password": "password123",
   "type": "premium"
 }
 
