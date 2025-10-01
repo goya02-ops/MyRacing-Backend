@@ -2,6 +2,7 @@
 # @name createCombination
 POST http://localhost:3000/api/combinations
 Content-Type: application/json
+
 {
   "dateFrom": "2024-01-01T10:00:00Z",
   "dateTo": "2024-01-01T18:00:00Z",
@@ -11,25 +12,23 @@ Content-Type: application/json
 }
 
 ### ID de combination
-@combinationId = {{createCombination.response.body.data.id}}
+//@combinationId = {{createCombination.response.body.data.id}}
 
 ### Obtener todas las races
 GET http://localhost:3000/api/races
 
 ### Crear race
-# @name createRace
 POST http://localhost:3000/api/races
 Content-Type: application/json
+
 {
-  "raceDateTime": "2024-01-15T14:00:00Z",
-  "result": null,
-  "description": "Argentina Grand Prix",
-  "registrationDeadline": "2024-01-10T23:59:59Z",
-  "combination": "1"
+  "raceDateTime": "2024-01-15",
+  "registrationDeadline": "2024-01-10",
+  "combination": 2
 }
 
 ### ID de race
-@id = {{createRace.response.body.data.id}}
+//@id = {{createRace.response.body.data.id}}
 
 ### Obtener race por id
 GET http://localhost:3000/api/races/1
@@ -37,6 +36,7 @@ GET http://localhost:3000/api/races/1
 ### Actualizar race (PUT)
 PUT http://localhost:3000/api/races/2
 Content-Type: application/json
+
 {
   "description": "Argentina Grand Prix - Modified"
 }
@@ -44,6 +44,7 @@ Content-Type: application/json
 ### Actualizar solo result (PATCH)
 PATCH http://localhost:3000/api/races/{{id}}
 Content-Type: application/json
+
 {
   "result": "1. Verstappen, 2. Hamilton, 3. Russell"
 }

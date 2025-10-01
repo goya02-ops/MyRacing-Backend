@@ -7,26 +7,31 @@ export async function validateSameSimulator(
   idCategoryVersion: number,
   idCircuitVersion: number
 ) {
-  const em = orm.em;
-  const categoryVersion = await em.findOne(
-    CategoryVersion,
-    { id: idCategoryVersion },
-    { populate: ['simulator'] }
-  );
-  const circuitVersion = await em.findOne(
-    CircuitVersion,
-    { id: idCircuitVersion },
-    { populate: ['simulator'] }
-  );
+  try {
+    const em = orm.em;
+    const categoryVersion = await em.findOne(
+      CategoryVersion,
+      { id: idCategoryVersion },
+      { populate: ['simulator'] }
+    );
+    const circuitVersion = await em.findOne(
+      CircuitVersion,
+      { id: idCircuitVersion },
+      { populate: ['simulator'] }
+    );
 
-  if (
-    categoryVersion &&
-    circuitVersion &&
-    categoryVersion.simulator.id === circuitVersion.simulator.id
-  ) {
-    return true;
+    if (
+      categoryVersion &&
+      circuitVersion &&
+      categoryVersion.simulator.id === circuitVersion.simulator.id
+    ) {
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.error('Error validating same simulator:', error);
+    return false;
   }
-  return false;
 }
 
 export function validateDate(combination: Combination) {

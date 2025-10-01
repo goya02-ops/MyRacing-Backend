@@ -45,7 +45,11 @@ async function getOne(req: Request, res: Response) {
 async function add(req: Request, res: Response) {
   try {
     const em = orm.em;
-    const validDates = validateDates(req.body.sanitizeInput);
+    const idCombination = Number.parseInt(req.body.sanitizeInput.combination);
+    const validDates = await validateDates(
+      req.body.sanitizeInput,
+      idCombination
+    );
 
     if (!validDates) {
       res.status(400).json({
@@ -68,13 +72,14 @@ async function update(req: Request, res: Response) {
     const em = orm.em;
     const id = Number.parseInt(req.params.id);
     const race = await em.findOneOrFail(Race, { id });
+    const idCombination = Number.parseInt(req.body.sanitizeInput.combination);
 
     if (
       req.body.sanitizeInput.raceDateTime &&
       req.body.sanitizeInput.registrationDeadline
     ) {
       // Se espera que se envie un formulario modificando ambas fechas
-      const validDates = validateDates(req.body.sanitizeInput);
+      const validDates = validateDates(req.body.sanitizeInput, idCombination);
       if (!validDates) {
         res.status(400).json({
           message:
