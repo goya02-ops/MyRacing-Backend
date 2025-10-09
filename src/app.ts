@@ -13,6 +13,7 @@ import { combinationRouter } from './combination/combination.routes.js';
 import { membershipRouter } from './membership/membership.routes.js';
 import { raceRouter } from './race/race.routes.js';
 import { raceUserRouter } from './race-user/race-user.routes.js';
+import cors from 'cors';
 
 const app = express();
 app.use(express.json());
@@ -21,6 +22,8 @@ app.use(express.json());
 app.use((req, res, next) => {
   RequestContext.create(orm.em, next);
 });
+
+app.use(cors());
 
 //antes de las rutas y de los middleware de negocio
 app.use('/api/categories', categoryRouter);
