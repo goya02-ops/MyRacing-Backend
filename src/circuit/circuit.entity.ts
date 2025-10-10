@@ -11,7 +11,7 @@ import { CircuitVersion } from '../circuit-version/circuit-version.entity.js';
 @Entity()
 export class Circuit extends BaseEntity {
   @Property({ nullable: false })
-  name!: string;
+  denomination!: string;
 
   @Property({ nullable: false })
   description!: string;

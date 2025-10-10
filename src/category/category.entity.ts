@@ -11,7 +11,7 @@ import { CategoryVersion } from '../category-version/category-version.entity.js'
 @Entity()
 export class Category extends BaseEntity {
   @Property({ nullable: false })
-  name!: string;
+  denomination!: string;
 
   @Property({ nullable: false })
   description!: string;

@@ -11,7 +11,6 @@ function sanitizeCategoryInput(
     denomination: req.body.denomination,
     description: req.body.description,
     abbreviation: req.body.abbreviation,
-    status: req.body.status,
   };
 
   Object.keys(req.body.sanitizeInput).forEach((key) => {
