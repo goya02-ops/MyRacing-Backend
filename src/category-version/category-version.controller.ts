@@ -74,10 +74,10 @@ async function add(req: Request, res: Response) {
 async function update(req: Request, res: Response) {
   try {
     const em = orm.em;
-    const id = Number.parseInt(req.params.id); //Obtengo id
+    const id = Number.parseInt(req.params.id);
     const categoryVersion = await em.findOneOrFail(CategoryVersion, { id });
-    em.assign(CategoryVersion, req.body); //Asignar los nuevos datos a la entidad que ya existe
-    await em.flush(); //Ejecuta el update
+    em.assign(categoryVersion, req.body.sanitizeInput); // Se realizó un cambio para normalizar 
+    await em.flush();
     res
       .status(200)
       .json({ message: 'Category Version updated', data: categoryVersion });
@@ -89,9 +89,9 @@ async function update(req: Request, res: Response) {
 async function remove(req: Request, res: Response) {
   try {
     const em = orm.em;
-    const id = Number.parseInt(req.params.id); //A que se refiere que lo toma de la URL, como sabe cual quiero
+    const id = Number.parseInt(req.params.id);
     const categoryVersion = await em.findOneOrFail(CategoryVersion, { id });
-    await em.removeAndFlush(CategoryVersion);
+    await em.removeAndFlush(categoryVersion); 
     res
       .status(200)
       .json({ message: 'Category Version deleted', data: categoryVersion });
