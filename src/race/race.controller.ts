@@ -61,7 +61,12 @@ async function add(req: Request, res: Response) {
 
     const race = em.create(Race, req.body.sanitizeInput);
     await em.flush();
-    res.status(201).json({ message: 'Race created', data: race });
+    const populatedRace = await em.findOneOrFail(
+      Race,
+      { id: race.id },
+      { populate: ['combination'] }
+    );
+    res.status(201).json({ message: 'Race created', data: populatedRace });
   } catch (error: any) {
     res.status(500).json({ data: error.message });
   }
@@ -91,7 +96,12 @@ async function update(req: Request, res: Response) {
 
     em.assign(race, req.body.sanitizeInput);
     await em.flush();
-    res.status(200).json({ message: 'Race updated', data: race });
+    const populatedRace = await em.findOneOrFail(
+      Race,
+      { id: race.id },
+      { populate: ['combination'] }
+    );
+    res.status(200).json({ message: 'Race updated', data: populatedRace });
   } catch (error: any) {
     res.status(500).json({ data: error.message });
   }

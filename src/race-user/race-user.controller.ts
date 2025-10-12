@@ -55,7 +55,14 @@ async function add(req: Request, res: Response) {
     const em = orm.em;
     const raceUser = em.create(RaceUser, req.body.sanitizeInput);
     await em.flush();
-    res.status(201).json({ message: 'Race user created', data: raceUser });
+    const populatedRaceUser = await em.findOneOrFail(
+      RaceUser,
+      { id: raceUser.id },
+      { populate: ['race', 'user'] }
+    );
+    res
+      .status(201)
+      .json({ message: 'Race user created', data: populatedRaceUser });
   } catch (error: any) {
     res.status(500).json({ data: error.message });
   }
@@ -68,7 +75,14 @@ async function update(req: Request, res: Response) {
     const raceUser = await em.findOneOrFail(RaceUser, { id });
     em.assign(raceUser, req.body.sanitizeInput);
     await em.flush();
-    res.status(200).json({ message: 'Race user updated', data: raceUser });
+    const populatedRaceUser = await em.findOneOrFail(
+      RaceUser,
+      { id: raceUser.id },
+      { populate: ['race', 'user'] }
+    );
+    res
+      .status(200)
+      .json({ message: 'Race user updated', data: populatedRaceUser });
   } catch (error: any) {
     res.status(500).json({ data: error.message });
   }

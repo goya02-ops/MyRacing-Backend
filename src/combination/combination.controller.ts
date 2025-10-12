@@ -90,7 +90,15 @@ async function add(req: Request, res: Response) {
 
     const combination = em.create(Combination, req.body.sanitizeInput);
     await em.flush();
-    res.status(201).json({ message: 'Combination created', data: combination });
+    const populatedCombination = await em.findOneOrFail(
+      Combination,
+      { id: combination.id },
+      { populate: ['categoryVersion', 'circuitVersion'] }
+    );
+    res.status(201).json({
+      message: 'Combination created',
+      data: populatedCombination,
+    });
   } catch (error: any) {
     res.status(500).json({ data: error.message });
   }
@@ -138,7 +146,14 @@ async function update(req: Request, res: Response) {
 
     em.assign(combination, req.body.sanitizeInput);
     await em.flush();
-    res.status(200).json({ message: 'Combination updated', data: combination });
+    const populatedCombination = await em.findOneOrFail(
+      Combination,
+      { id: combination.id },
+      { populate: ['categoryVersion', 'circuitVersion'] }
+    );
+    res
+      .status(200)
+      .json({ message: 'Combination updated', data: populatedCombination });
   } catch (error: any) {
     res.status(500).json({ data: error.message });
   }

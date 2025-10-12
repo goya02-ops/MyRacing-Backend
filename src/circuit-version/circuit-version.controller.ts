@@ -31,12 +31,10 @@ async function findAll(req: Request, res: Response) {
         populate: ['circuit', 'simulator'],
       }
     );
-    res
-      .status(200)
-      .json({
-        message: 'Find all circuit_versions classes',
-        data: circuitVersions,
-      });
+    res.status(200).json({
+      message: 'Find all circuit_versions classes',
+      data: circuitVersions,
+    });
   } catch (error: any) {
     res.status(500).json({ data: error.message });
   }
@@ -66,9 +64,15 @@ async function add(req: Request, res: Response) {
     const em = orm.em;
     const circuitVersion = em.create(CircuitVersion, req.body);
     await em.flush();
-    res
-      .status(201)
-      .json({ message: 'CircuitVersion class created', data: circuitVersion });
+    const populatedCircuitVersion = await em.findOneOrFail(
+      CircuitVersion,
+      { id: circuitVersion.id },
+      { populate: ['circuit', 'simulator'] }
+    );
+    res.status(201).json({
+      message: 'CircuitVersion class created',
+      data: populatedCircuitVersion,
+    });
   } catch (error: any) {
     res.status(500).json({ data: error.message });
   }
@@ -81,9 +85,17 @@ async function update(req: Request, res: Response) {
     const circuitVersion = await em.findOneOrFail(CircuitVersion, { id });
     em.assign(circuitVersion, req.body.sanitizeInput);
     await em.flush();
+    const populatedCircuitVersion = await em.findOneOrFail(
+      CircuitVersion,
+      { id: circuitVersion.id },
+      { populate: ['circuit', 'simulator'] }
+    );
     res
       .status(200)
-      .json({ message: 'Circuit_Version updated', data: circuitVersion });
+      .json({
+        message: 'Circuit_Version updated',
+        data: populatedCircuitVersion,
+      });
   } catch (error: any) {
     res.status(500).json({ data: error.message });
   }

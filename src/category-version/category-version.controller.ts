@@ -63,9 +63,15 @@ async function add(req: Request, res: Response) {
     const em = orm.em;
     const categoryVersion = em.create(CategoryVersion, req.body);
     await em.flush(); //El em.create la crea en memoria y em.flush realiza el insert
-    res
-      .status(201)
-      .json({ message: 'Category Version created', data: categoryVersion });
+    const populatedCategoryVersion = await em.findOneOrFail(
+      CategoryVersion,
+      { id: categoryVersion.id },
+      { populate: ['category', 'simulator'] }
+    );
+    res.status(201).json({
+      message: 'Category Version created',
+      data: populatedCategoryVersion,
+    });
   } catch (error: any) {
     res.status(500).json({ data: error.message });
   }
@@ -76,11 +82,17 @@ async function update(req: Request, res: Response) {
     const em = orm.em;
     const id = Number.parseInt(req.params.id);
     const categoryVersion = await em.findOneOrFail(CategoryVersion, { id });
-    em.assign(categoryVersion, req.body.sanitizeInput); // Se realizó un cambio para normalizar 
+    em.assign(categoryVersion, req.body.sanitizeInput); // Se realizó un cambio para normalizar
     await em.flush();
-    res
-      .status(200)
-      .json({ message: 'Category Version updated', data: categoryVersion });
+    const populatedCategoryVersion = await em.findOneOrFail(
+      CategoryVersion,
+      { id: categoryVersion.id },
+      { populate: ['category', 'simulator'] }
+    );
+    res.status(200).json({
+      message: 'Category Version updated',
+      data: populatedCategoryVersion,
+    });
   } catch (error: any) {
     res.status(500).json({ data: error.message });
   }
@@ -91,7 +103,7 @@ async function remove(req: Request, res: Response) {
     const em = orm.em;
     const id = Number.parseInt(req.params.id);
     const categoryVersion = await em.findOneOrFail(CategoryVersion, { id });
-    await em.removeAndFlush(categoryVersion); 
+    await em.removeAndFlush(categoryVersion);
     res
       .status(200)
       .json({ message: 'Category Version deleted', data: categoryVersion });
