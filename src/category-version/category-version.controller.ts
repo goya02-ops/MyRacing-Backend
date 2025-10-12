@@ -76,7 +76,7 @@ async function update(req: Request, res: Response) {
     const em = orm.em;
     const id = Number.parseInt(req.params.id);
     const categoryVersion = await em.findOneOrFail(CategoryVersion, { id });
-    em.assign(categoryVersion, req.body.sanitizeInput); // Se realizó un cambio para normalizar 
+    em.assign(categoryVersion, req.body.sanitizeInput); // Fix
     await em.flush();
     res
       .status(200)
