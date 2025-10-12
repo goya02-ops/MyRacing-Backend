@@ -27,4 +27,3 @@ dist/**/*
 
 ## built vscode extensions
 *.vsix
-pnpm-lock.yaml
