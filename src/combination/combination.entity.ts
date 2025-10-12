@@ -24,6 +24,9 @@ export class Combination extends BaseEntity {
   lapsNumber!: number;
 
   @Property({ nullable: false })
+  raceIntervalMinutes!: number;
+
+  @Property({ nullable: false })
   obligatoryStopsQuantity!: number;
 
   @Property({ nullable: false })
