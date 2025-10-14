@@ -31,26 +31,28 @@ function sanitizeCombinationInput(
 // Esto generar carreras automáticamente
 async function generateRaces(combination: Combination) {
   const em = orm.em.fork();
-  
+
   const startDate = new Date(combination.dateFrom);
   const endDate = new Date(combination.dateTo);
   const intervalMs = combination.raceIntervalMinutes * 60 * 1000;
 
   let currentDate = new Date(startDate);
-  
+
   while (currentDate <= endDate) {
     // Calcular la fecha límite de inscripción (15 minutos antes de la carrera)
-    const registrationDeadline = new Date(currentDate.getTime() - (15 * 60 * 1000));
-    
+    const registrationDeadline = new Date(
+      currentDate.getTime() - 15 * 60 * 1000
+    );
+
     em.create(Race, {
       raceDateTime: currentDate,
       registrationDeadline: registrationDeadline,
       combination: combination,
     });
-    
+
     currentDate = new Date(currentDate.getTime() + intervalMs);
   }
-  
+
   await em.flush();
 }
 
@@ -60,13 +62,13 @@ async function getAll(req: Request, res: Response) {
     const combinations = await em.find(
       Combination,
       {},
-      { 
+      {
         populate: [
-          'categoryVersion.category', 
-          'categoryVersion.simulator', 
-          'circuitVersion.circuit', 
-          'circuitVersion.simulator'
-        ] 
+          'categoryVersion.category',
+          'categoryVersion.simulator',
+          'circuitVersion.circuit',
+          'circuitVersion.simulator',
+        ],
       }
     );
     res
@@ -84,13 +86,14 @@ async function getOne(req: Request, res: Response) {
     const combination = await em.findOneOrFail(
       Combination,
       { id },
-      { 
+      {
         populate: [
-          'categoryVersion.category', 
-          'categoryVersion.simulator', 
-          'circuitVersion.circuit', 
-          'circuitVersion.simulator'
-        ] 
+          'categoryVersion.category',
+          'categoryVersion.simulator',
+          'circuitVersion.circuit',
+          'circuitVersion.simulator',
+          'races',
+        ],
       }
     );
     res.status(200).json({ message: 'Combination found', data: combination });
@@ -132,24 +135,24 @@ async function add(req: Request, res: Response) {
 
     const combination = em.create(Combination, req.body.sanitizeInput);
     await em.flush();
-    
+
     // NUEVO: Generar las carreras automáticamente
     await generateRaces(combination);
-    
+
     // IMPORTANTE: No hacer populate de 'races' para evitar loop infinito
     const populatedCombination = await em.findOneOrFail(
       Combination,
       { id: combination.id },
-      { 
+      {
         populate: [
-          'categoryVersion.category', 
-          'categoryVersion.simulator', 
-          'circuitVersion.circuit', 
-          'circuitVersion.simulator'
-        ] 
+          'categoryVersion.category',
+          'categoryVersion.simulator',
+          'circuitVersion.circuit',
+          'circuitVersion.simulator',
+        ],
       }
     );
-    
+
     res.status(201).json({
       message: 'Combination created',
       data: populatedCombination,
@@ -204,13 +207,13 @@ async function update(req: Request, res: Response) {
     const populatedCombination = await em.findOneOrFail(
       Combination,
       { id: combination.id },
-      { 
+      {
         populate: [
-          'categoryVersion.category', 
-          'categoryVersion.simulator', 
-          'circuitVersion.circuit', 
-          'circuitVersion.simulator'
-        ] 
+          'categoryVersion.category',
+          'categoryVersion.simulator',
+          'circuitVersion.circuit',
+          'circuitVersion.simulator',
+        ],
       }
     );
     res
