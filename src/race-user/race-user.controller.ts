@@ -100,6 +100,23 @@ async function remove(req: Request, res: Response) {
   }
 }
 
+async function getByUser(req: Request, res: Response) {
+  try {
+    const em = orm.em;
+    const userId = Number.parseInt(req.query.userId as string);
+    
+    const raceUsers = await em.find(
+      RaceUser,
+      { user: userId },
+      { populate: ['race', 'user'] }
+    );
+    
+    res.status(200).json({ message: 'Race users found', data: raceUsers });
+  } catch (error: any) {
+    res.status(500).json({ data: error.message });
+  }
+}
+
 export const RaceUserController = {
   sanitizeRaceUserInput,
   getAll,
@@ -107,4 +124,5 @@ export const RaceUserController = {
   add,
   update,
   remove,
+  getByUser,
 };
