@@ -24,7 +24,7 @@ export class Simulator extends BaseEntity {
       cascade: [Cascade.ALL],
     }
   )
-  circuitVersions = new Collection<CircuitVersion>(this);
+  circuits = new Collection<CircuitVersion>(this);
 
   @OneToMany(
     () => CategoryVersion,
@@ -33,5 +33,5 @@ export class Simulator extends BaseEntity {
       cascade: [Cascade.ALL],
     }
   )
-  categoryVersions = new Collection<CategoryVersion>(this);
+  categories = new Collection<CategoryVersion>(this);
 }

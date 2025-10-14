@@ -36,7 +36,11 @@ async function findOne(req: Request, res: Response) {
   try {
     const em = orm.em;
     const id = Number.parseInt(req.params.id);
-    const simulator = await em.findOneOrFail(Simulator, { id });
+    const simulator = await em.findOneOrFail(
+      Simulator,
+      { id },
+      { populate: ['circuits', 'categories'] }
+    );
     res.status(200).json({ message: 'Simulator found: ', data: simulator });
   } catch (error: any) {
     res.status(500).json({ data: error.message });
