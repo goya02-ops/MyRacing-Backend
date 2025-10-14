@@ -4,7 +4,7 @@ import { BaseEntity } from '../shared/baseEntity.js';
 @Entity()
 export class Membership extends BaseEntity {
   @Property({ nullable: false })
-  denomination!: string;
+  dateFrom!: Date;
 
   @Property({ nullable: false })
   price!: number;

@@ -8,8 +8,8 @@ function sanitizeMembresiaInput(
   next: NextFunction
 ) {
   req.body.sanitizeInput = {
-    descripcion: req.body.descripcion,
-    valorMembresia: req.body.valorMembresia,
+    dateFrom: req.body.dateFrom,
+    price: req.body.price,
   };
 
   Object.keys(req.body.sanitizeInput).forEach((key) => {
