@@ -39,7 +39,7 @@ async function findOne(req: Request, res: Response) {
     const simulator = await em.findOneOrFail(
       Simulator,
       { id },
-      { populate: ['circuits', 'categories'] }
+      { populate: ['circuits.circuit', 'categories.category'] }
     );
     res.status(200).json({ message: 'Simulator found: ', data: simulator });
   } catch (error: any) {
