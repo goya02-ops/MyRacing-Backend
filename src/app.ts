@@ -13,6 +13,7 @@ import { combinationRouter } from './combination/combination.routes.js';
 import { membershipRouter } from './membership/membership.routes.js';
 import { raceRouter } from './race/race.routes.js';
 import { raceUserRouter } from './race-user/race-user.routes.js';
+import { authRouter } from './auth/auth.routes.js';
 import cors from 'cors';
 
 const app = express();
@@ -36,6 +37,7 @@ app.use('/api/combinations', combinationRouter);
 app.use('/api/membership', membershipRouter);
 app.use('/api/races', raceRouter);
 app.use('/api/race-users', raceUserRouter);
+app.use('/api/auth', authRouter);
 
 // Middleware 404 debe ir AL FINAL, después de todas las rutas
 app.use((_, res) => {
