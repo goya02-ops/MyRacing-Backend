@@ -15,10 +15,10 @@ import { Race } from '../race/race.entity.js';
 @Entity()
 export class Combination extends BaseEntity {
   @Property({ nullable: false })
-  dateFrom!: string;
+  dateFrom!: Date;
 
   @Property({ nullable: false })
-  dateTo!: string;
+  dateTo!: Date;
 
   @Property({ nullable: false })
   lapsNumber!: number;

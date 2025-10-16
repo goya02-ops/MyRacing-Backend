@@ -3,6 +3,7 @@ import { Router } from 'express';
 
 export const combinationRouter = Router();
 combinationRouter.get('/', controller.getAll);
+combinationRouter.get('/races', controller.getCurrentRaces);
 combinationRouter.get('/:id', controller.getOne);
 combinationRouter.post(
   '/',

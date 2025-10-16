@@ -15,7 +15,7 @@ function sanitizeCombinationInput(
     lapsNumber: req.body.lapsNumber,
     obligatoryStopsQuantity: req.body.obligatoryStopsQuantity,
     userType: req.body.userType,
-    raceIntervalMinutes: req.body.raceIntervalMinutes, // AGREGADO
+    raceIntervalMinutes: req.body.raceIntervalMinutes,
     categoryVersion: req.body.categoryVersion,
     circuitVersion: req.body.circuitVersion,
   };
@@ -30,7 +30,7 @@ function sanitizeCombinationInput(
 
 // Esto generar carreras automáticamente
 async function generateRaces(combination: Combination) {
-  const em = orm.em.fork();
+  const em = orm.em;
 
   const startDate = new Date(combination.dateFrom);
   const endDate = new Date(combination.dateTo);
@@ -73,7 +73,33 @@ async function getAll(req: Request, res: Response) {
     );
     res
       .status(200)
-      .json({ message: 'Find all Combinaciones', data: combinations });
+      .json({ message: 'Find all combinations', data: combinations });
+  } catch (error: any) {
+    res.status(500).json({ data: error.message });
+  }
+}
+
+async function getCurrentRaces(req: Request, res: Response) {
+  try {
+    const em = orm.em;
+    const now = new Date();
+    const filter: any = {
+      dateFrom: { $lte: now },
+      dateTo: { $gte: now },
+    };
+
+    const combinations = await em.find(Combination, filter, {
+      populate: [
+        'categoryVersion.category',
+        'categoryVersion.simulator',
+        'circuitVersion.circuit',
+        'circuitVersion.simulator',
+        'races',
+      ],
+    });
+    res
+      .status(200)
+      .json({ message: 'Find current combinations', data: combinations });
   } catch (error: any) {
     res.status(500).json({ data: error.message });
   }
@@ -239,6 +265,7 @@ async function remove(req: Request, res: Response) {
 export const CombinationController = {
   sanitizeCombinationInput,
   getAll,
+  getCurrentRaces,
   getOne,
   add,
   update,
