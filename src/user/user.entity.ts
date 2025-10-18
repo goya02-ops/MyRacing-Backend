@@ -4,6 +4,7 @@ import {
   OneToMany,
   Cascade,
   Collection,
+  Enum,
 } from '@mikro-orm/mysql';
 import { BaseEntity } from '../shared/baseEntity.js';
 import { RaceUser } from '../race-user/race-user.entity.js';
@@ -22,11 +23,17 @@ export class User extends BaseEntity {
   @Property({ nullable: false })
   password!: string;
 
-  @Property({ nullable: false })
-  type!: string;
+  @Enum(() => UserType)
+  type!: UserType;
 
   @OneToMany(() => RaceUser, (raceUser) => raceUser.user, {
     cascade: [Cascade.ALL],
   })
   raceUsers = new Collection<RaceUser>(this);
+}
+
+export enum UserType {
+  ADMIN = 'admin',
+  COMMON = 'common',
+  PREMIUM = 'premium',
 }
