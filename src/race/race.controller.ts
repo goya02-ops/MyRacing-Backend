@@ -34,7 +34,7 @@ async function getOne(req: Request, res: Response) {
     const race = await em.findOneOrFail(
       Race,
       { id },
-      { populate: ['combination'] }
+      { populate: ['combination', 'raceUsers'] }
     );
     res.status(200).json({ message: 'Race found', data: race });
   } catch (error: any) {

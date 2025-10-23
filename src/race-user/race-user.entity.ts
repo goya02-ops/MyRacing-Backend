@@ -12,19 +12,17 @@ import { User } from '../user/user.entity.js';
 @Entity()
 export class RaceUser extends BaseEntity {
   @Property({ type: DateTimeType, nullable: false })
-  registrationDateTime!: Date; // Corresponde a 'fecha_hora_inscripcion'
+  registrationDateTime!: Date;
 
-  @Property({ nullable: false })
-  startPosition!: number; // Corresponde a 'puesto_salida'
+  @Property({ nullable: true })
+  startPosition?: number;
 
-  @Property({ nullable: false })
-  finishPosition!: number; // Corresponde a 'puesto_llegada'
+  @Property({ nullable: true })
+  finishPosition?: number;
 
-  // Relación Many-to-One con Race
   @ManyToOne(() => Race, { nullable: false })
   race!: Rel<Race>;
 
-  // Relación Many-to-One con User
   @ManyToOne(() => User, { nullable: false })
   user!: Rel<User>;
 }
