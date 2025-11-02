@@ -15,7 +15,7 @@ Thumbs.db
 dist/**/*
 
 # vscode
-.vscode/*
+.vscode/
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
@@ -27,4 +27,3 @@ dist/**/*
 
 ## built vscode extensions
 *.vsix
-pnpm-lock.yaml

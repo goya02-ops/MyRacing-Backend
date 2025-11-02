@@ -1,0 +1,44 @@
+### Obtener todos los usuarios
+GET http://localhost:3000/api/users
+
+### Crear usuario
+# @name createUser
+POST http://localhost:3000/api/users
+Content-Type: application/json
+
+{
+  "userName": "Juan Perez",
+  "realName": "Juan Perez",
+  "email": "Juanperez@gmail.com",
+  "password": "password123",
+  "type": "comun"
+}
+
+### ID del usuario recién creado
+@id = {{createUser.response.body.data.id}}
+
+### Obtener usuario por ID
+GET http://localhost:3000/api/users/{{id}}
+
+### Actualizar usuario (PUT)
+PUT http://localhost:3000/api/users/{{id}}
+Content-Type: application/json
+
+{
+  "userName": "Juan Perez",
+  "realName": "Juan Perez",
+  "email": "Juanperez@gmail.com",
+  "password": "password123",
+  "type": "premium"
+}
+
+### Actualizar solo tipo de usuario (PATCH)
+PATCH http://localhost:3000/api/users/{{id}}
+Content-Type: application/json
+
+{
+  "type": "administrador"
+}
+
+### Eliminar usuario
+DELETE http://localhost:3000/api/users/{{id}}

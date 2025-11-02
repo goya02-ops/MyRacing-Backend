@@ -1,0 +1,42 @@
+###obtener categorías
+GET http://localhost:3000/api/categories
+
+###crear categoría
+# @name createCategory
+POST http://localhost:3000/api/categories
+Content-Type: application/json
+
+{
+  "name": "Formula 1",
+  "description": "Categoría de Formula 1",
+  "abbreviation": "F1",
+  "status": "active"
+}
+
+### ID
+@id = {{createCategory.response.body.data.id}}
+
+###obtener categoría por id
+GET http://localhost:3000/api/categories/1
+
+
+###actualizar categoría (PUT)
+PUT http://localhost:3000/api/categories/{{id}}
+Content-Type: application/json
+
+{
+  "denomination": "Formula 1",
+  "description": "Descripción actualizada de la categoría F1",
+  "abbreviation": "F1",
+}
+
+###actualizar solo estado de categoría (PATCH)
+PATCH http://localhost:3000/api/categories/{{id}}
+Content-Type: application/json  
+
+{
+  "status": "active"
+}
+
+###eliminar categoría
+DELETE http://localhost:3000/api/categories/{{id}}
