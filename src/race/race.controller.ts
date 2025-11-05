@@ -17,11 +17,52 @@ function sanitizeRaceInput(req: Request, res: Response, next: NextFunction) {
   next();
 }
 
-async function getAll(req: Request, res: Response) {
+async function getCurrentByCombination(req: Request, res: Response) {
   try {
     const em = orm.em;
-    const races = await em.find(Race, {}, { populate: ['combination'] });
-    res.status(200).json({ message: 'Find all races', data: races });
+    const limitPrev = Number.parseInt(req.params.limitsPrevious);
+    const limitNext = Number.parseInt(req.params.limitsNext);
+    const idCombination = Number.parseInt(req.params.combination);
+    const currentDate = new Date();
+
+    const [previousRaces, nextRaces] = await Promise.all([
+      em.find(
+        Race,
+        {
+          $and: [
+            { combination: idCombination },
+            { raceDateTime: { $lt: currentDate } },
+          ],
+        },
+        {
+          populate: ['raceUsers'],
+          orderBy: { raceDateTime: 'DESC' },
+          limit: limitPrev,
+        }
+      ),
+      em.find(
+        Race,
+        {
+          $and: [
+            { combination: idCombination },
+            { raceDateTime: { $gt: currentDate } },
+          ],
+        },
+        {
+          populate: ['raceUsers'],
+          orderBy: { raceDateTime: 'ASC' },
+          limit: limitNext,
+        }
+      ),
+    ]);
+
+    res.status(200).json({
+      message: 'Races found',
+      data: {
+        previousRaces,
+        nextRaces,
+      },
+    });
   } catch (error: any) {
     res.status(500).json({ data: error.message });
   }
@@ -121,7 +162,7 @@ async function remove(req: Request, res: Response) {
 
 export const RaceController = {
   sanitizeRaceInput,
-  getAll,
+  getCurrentByCombination,
   getOne,
   add,
   update,

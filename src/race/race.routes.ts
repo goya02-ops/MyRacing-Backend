@@ -3,7 +3,10 @@ import { Router } from 'express';
 
 export const raceRouter = Router();
 
-raceRouter.get('/', controller.getAll);
+raceRouter.get(
+  '/by-combination/:combination/:previousLimit/:nextLimit',
+  controller.getCurrentByCombination
+);
 raceRouter.get('/:id', controller.getOne);
 raceRouter.post('/', controller.sanitizeRaceInput, controller.add);
 raceRouter.put('/:id', controller.sanitizeRaceInput, controller.update);

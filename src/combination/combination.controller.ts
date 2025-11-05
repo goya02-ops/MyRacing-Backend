@@ -94,7 +94,6 @@ async function getCurrentRaces(req: Request, res: Response) {
         'categoryVersion.simulator',
         'circuitVersion.circuit',
         'circuitVersion.simulator',
-        'races',
       ],
     });
     res
