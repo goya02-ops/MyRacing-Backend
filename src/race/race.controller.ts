@@ -20,8 +20,8 @@ function sanitizeRaceInput(req: Request, res: Response, next: NextFunction) {
 async function getCurrentByCombination(req: Request, res: Response) {
   try {
     const em = orm.em;
-    const limitPrev = Number.parseInt(req.params.limitsPrevious);
-    const limitNext = Number.parseInt(req.params.limitsNext);
+    const limitPrev = Number.parseInt(req.params.previousLimit);
+    const limitNext = Number.parseInt(req.params.nextLimit);
     const idCombination = Number.parseInt(req.params.combination);
     const currentDate = new Date();
 
@@ -59,6 +59,8 @@ async function getCurrentByCombination(req: Request, res: Response) {
     res.status(200).json({
       message: 'Races found',
       data: {
+        limitNext,
+        limitPrev,
         previousRaces,
         nextRaces,
       },
