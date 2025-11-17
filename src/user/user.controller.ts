@@ -76,6 +76,42 @@ async function remove(req: Request, res: Response) {
   }
 }
 
+// Ver mi propio perfil
+async function getMe(req: Request, res: Response) {
+  try {
+    const em = orm.em;
+    const userId = req.user?.id;
+    
+    const user = await em.findOneOrFail(User, { id: userId });
+    const { password: _, ...userWithoutPassword } = user;
+    
+    res.status(200).json({ message: 'Usuario encontrado', data: userWithoutPassword });
+  } catch (error: any) {
+    res.status(500).json({ data: error.message });
+  }
+}
+
+// Actualizar mi propio perfil
+async function updateMe(req: Request, res: Response) {
+  try {
+    const em = orm.em;
+    const userId = req.user?.id;
+    
+    const user = await em.findOneOrFail(User, { id: userId });
+    
+    
+    const { type, ...sanitizedInput } = req.body.sanitizeInput;
+    
+    em.assign(user, sanitizedInput);
+    await em.flush();
+    
+    const { password: _, ...userWithoutPassword } = user;
+    res.status(200).json({ message: 'Perfil actualizado', data: userWithoutPassword });
+  } catch (error: any) {
+    res.status(500).json({ data: error.message });
+  }
+}
+
 export const UserController = {
   sanitizeUserInput,
   getAll,
@@ -83,4 +119,6 @@ export const UserController = {
   add,
   update,
   remove,
+  getMe,
+  updateMe,
 };

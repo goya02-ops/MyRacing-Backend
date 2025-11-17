@@ -161,10 +161,10 @@ async function add(req: Request, res: Response) {
     const combination = em.create(Combination, req.body.sanitizeInput);
     await em.flush();
 
-    // NUEVO: Generar las carreras automáticamente
+    // Generar las carreras automáticamente
     await generateRaces(combination);
 
-    // IMPORTANTE: No hacer populate de 'races' para evitar loop infinito
+    // No hacer populate de 'races' para evitar loop infinito
     const populatedCombination = await em.findOneOrFail(
       Combination,
       { id: combination.id },
@@ -191,7 +191,21 @@ async function update(req: Request, res: Response) {
   try {
     const em = orm.em;
     const id = Number.parseInt(req.params.id);
-    const combination = await em.findOneOrFail(Combination, { id });
+    const combination = await em.findOneOrFail(Combination, { id }, { populate: ['races'] });
+    const oldDateTo = new Date(combination.dateTo);
+
+    // Validar que NO se intente cambiar dateFrom
+    if (req.body.sanitizeInput.dateFrom) {
+      const newDateFrom = new Date(req.body.sanitizeInput.dateFrom);
+      const oldDateFrom = new Date(combination.dateFrom);
+      
+      if (newDateFrom.getTime() !== oldDateFrom.getTime()) {
+        res.status(400).json({ 
+          message: 'No se puede modificar la fecha de inicio (dateFrom) de una combinación existente.' 
+        });
+        return;
+      }
+    }
 
     if (req.body.sanitizeInput.dateFrom && req.body.sanitizeInput.dateTo) {
       // Se espera que se envie un formulario modificando ambas fechas
@@ -227,8 +241,37 @@ async function update(req: Request, res: Response) {
       }
     }
 
+    // Actualizar la combinación
     em.assign(combination, req.body.sanitizeInput);
     await em.flush();
+
+    // Si se extendió la fecha, generar carreras para los días nuevos
+    const newDateTo = new Date(combination.dateTo);
+    if (newDateTo > oldDateTo) {
+      // Se extendió el período, generar carreras para los días nuevos
+      const intervalMs = combination.raceIntervalMinutes * 60 * 1000;
+      
+      // Empezar desde el día siguiente al anterior dateTo
+      let currentDate = new Date(oldDateTo.getTime() + intervalMs);
+
+      while (currentDate <= newDateTo) {
+        // Calcular la fecha límite de inscripción (15 minutos antes de la carrera)
+        const registrationDeadline = new Date(
+          currentDate.getTime() - 15 * 60 * 1000
+        );
+
+        em.create(Race, {
+          raceDateTime: currentDate,
+          registrationDeadline: registrationDeadline,
+          combination: combination,
+        });
+
+        currentDate = new Date(currentDate.getTime() + intervalMs);
+      }
+
+      await em.flush();
+    }
+
     const populatedCombination = await em.findOneOrFail(
       Combination,
       { id: combination.id },
@@ -241,6 +284,7 @@ async function update(req: Request, res: Response) {
         ],
       }
     );
+    
     res
       .status(200)
       .json({ message: 'Combination updated', data: populatedCombination });
