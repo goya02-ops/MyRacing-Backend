@@ -9,5 +9,10 @@ paymentRouter.post(
   authenticateToken,
   controller.createPreferenceHandler
 );
+paymentRouter.post(
+  '/process-payment',
+  authenticateToken,
+  controller.processPaymentHandler
+);
 
 export default paymentRouter;
