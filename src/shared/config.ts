@@ -11,3 +11,4 @@ export const JWT_REFRESH_EXPIRES_IN = '7d';
 export const MERCADOPAGO_API_KEY = process.env.MERCADOPAGO_API_KEY;
 export const URL_FRONTEND = process.env.URL_FRONTEND;
 export const URL_BACKEND = process.env.URL_BACKEND;
+export const URL_WEBHOOK_MP = process.env.URL_WEBHOOK_MP;

@@ -16,7 +16,6 @@ import { raceUserRouter } from './race-user/race-user.routes.js';
 import { authRouter } from './auth/auth.routes.js';
 import paymentRouter from './payment/payment.routes.js';
 import cors from 'cors';
-import { webhookRouter } from './webhook/webhook.routes.js';
 
 const app = express();
 app.use(express.json());
@@ -39,7 +38,6 @@ app.use('/api/membership', membershipRouter);
 app.use('/api/races', raceRouter);
 app.use('/api/race-users', raceUserRouter);
 app.use('/api/payment', paymentRouter);
-app.use('/api/webhooks', webhookRouter);
 app.use('/api/auth', authRouter);
 
 // Middleware 404 debe ir AL FINAL, después de todas las rutas

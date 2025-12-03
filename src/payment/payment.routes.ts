@@ -15,4 +15,12 @@ paymentRouter.post(
   controller.processPaymentHandler
 );
 
+paymentRouter.get(
+  '/check-payment-status/:id',
+  authenticateToken,
+  controller.checkPaymentStatusHandler
+);
+
+paymentRouter.post('/wh-mp', controller.receiveWebhookHandler);
+
 export default paymentRouter;
