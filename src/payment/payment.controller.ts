@@ -4,18 +4,18 @@ import { orm } from '../shared/orm.js';
 import { User, UserType } from '../user/user.entity.js';
 import { currentMembership } from '../utils/currentMembership.js';
 import {
-  MERCADOPAGO_API_KEY,
+  MERCADOPAGO_ACCESS_TOKEN,
   URL_BACKEND,
   URL_FRONTEND,
-  URL_WEBHOOK_MP,
+  URL_WEBHOOK_MP, 
 } from '../shared/config.js';
 
-if (!MERCADOPAGO_API_KEY) {
+if (!MERCADOPAGO_ACCESS_TOKEN) {
   throw new Error('Falta la variable de entorno MP_ACCESS_TOKEN');
 }
 
 const client = new MercadoPagoConfig({
-  accessToken: MERCADOPAGO_API_KEY,
+  accessToken: MERCADOPAGO_ACCESS_TOKEN,
 });
 const preferenceClient = new Preference(client);
 const paymentClient = new Payment(client);
