@@ -13,3 +13,5 @@ export const URL_BACKEND = process.env.URL_BACKEND;
 export const URL_WEBHOOK_MP = process.env.URL_WEBHOOK_MP;
 export const BREVO_API_KEY = process.env.BREVO_API_KEY || "";
 export const FROM_EMAIL = process.env.FROM_EMAIL || "";
+export const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
+//Están duplicados URL_FRONTEND y FRONTEND_URL, se podría unificar en una sola variable para evitar confusiones.
