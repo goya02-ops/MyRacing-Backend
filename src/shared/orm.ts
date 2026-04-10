@@ -7,7 +7,7 @@ export const orm = await MikroORM.init({
   dbName: 'myracing',
   clientUrl: 'mysql://admin:MiR@cing_2025!@mysql:3306/myracing',
   highlighter: new SqlHighlighter(),
-  debug: true,
+  debug: false,
   schemaGenerator: {
     // never in production
     disableForeignKeys: true,

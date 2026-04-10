@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import { orm } from '../shared/orm.js';
 import { User } from '../user/user.entity.js';
 import { JWT_SECRET, JWT_EXPIRES_IN, JWT_REFRESH_SECRET, JWT_REFRESH_EXPIRES_IN } from '../shared/config.js';
+import { handleControllerError } from '../shared/error.util.js';
 
 // Almacenamiento en memoria de refresh tokens (en producción usa Redis o BD)
 const refreshTokenStore = new Set<string>();
@@ -62,8 +63,8 @@ async function register(req: Request, res: Response) {
       accessToken,
       refreshToken
     });
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
+  } catch (error) {
+    handleControllerError(error, res);
   }
 }
 
@@ -100,8 +101,8 @@ async function login(req: Request, res: Response) {
       accessToken,
       refreshToken
     });
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
+  } catch (error) {
+    handleControllerError(error, res);
   }
 }
 
@@ -147,12 +148,12 @@ async function refreshAccessToken(req: Request, res: Response) {
       message: 'Token renovado exitosamente',
       accessToken: newAccessToken
     });
-  } catch (error: any) {
-    if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
+  } catch (error) {
+    if ((error as any).name === 'JsonWebTokenError' || (error as any).name === 'TokenExpiredError') {
       res.status(403).json({ message: 'Refresh token inválido o expirado' });
       return;
     }
-    res.status(500).json({ message: error.message });
+    handleControllerError(error, res);
   }
 }
 
@@ -169,8 +170,8 @@ async function logout(req: Request, res: Response) {
     refreshTokenStore.delete(refreshToken);
 
     res.status(200).json({ message: 'Sesión cerrada exitosamente' });
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
+  } catch (error) {
+    handleControllerError(error, res);
   }
 }
 
