@@ -13,6 +13,9 @@ services:
       context: .
     environment:
       NODE_ENV: production
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      MP_ACCESS_TOKEN: "dummy_token" # This is a placeholder value. You should replace it with your actual access token.
     ports:
       - 3000:3000
 
