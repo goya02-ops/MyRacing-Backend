@@ -3,9 +3,9 @@ import { BaseEntity } from '../shared/baseEntity.js';
 
 @Entity()
 export class Membership extends BaseEntity {
-  @Property({ nullable: false })
+  @Property({ type: 'datetime', nullable: false })
   dateFrom!: Date;
 
-  @Property({ nullable: false })
+  @Property({ type: 'number', nullable: false })
   price!: number;
 }

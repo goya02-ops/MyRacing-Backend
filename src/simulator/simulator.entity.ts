@@ -11,10 +11,10 @@ import { CircuitVersion } from '../circuit-version/circuit-version.entity.js';
 
 @Entity()
 export class Simulator extends BaseEntity {
-  @Property({ nullable: false })
+  @Property({ type: 'string', nullable: false })
   name!: string;
 
-  @Property({ nullable: false })
+  @Property({ type: 'string', nullable: false })
   status?: string;
 
   @OneToMany(

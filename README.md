@@ -19,6 +19,7 @@ Este repositorio contiene el servicio de API REST desarrollado en Node.js y Type
 - **Base de Datos:** MySQL
 - **Autenticación:** JWT (JSON Web Tokens)
 - **Gestor de Paquetes:** pnpm
+- **Dev Runtime:** tsx (hot reload sin compilación)
 
 ---
 
@@ -65,10 +66,10 @@ El proyecto utiliza **MikroORM** para la gestión del esquema.
 2.  **Sincronizar el Esquema (Crear/Actualizar Tablas):**
     El script principal (`app.ts`) llama a `await syncSchema()` al inicio, que automáticamente crea o actualiza las tablas necesarias en la base de datos.
 
-### 5. Ejecutar el Proyecto (Modo Desarrollo)
-
-Utilizar el script de desarrollo, que compila (TypeScript a JavaScript) y ejecuta el servidor, observando los cambios:
+### 5. Ejecutar el Proyecto
 
 ```bash
-pnpm start:dev
+pnpm dev      # Desarrollo con tsx (hot reload)
+pnpm build    # Compilar TypeScript
+pnpm start    # Producción
 ```

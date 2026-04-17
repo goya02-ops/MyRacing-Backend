@@ -16,10 +16,10 @@ export class RaceUser extends BaseEntity {
   @Property({ type: DateTimeType, nullable: false })
   registrationDateTime!: Date;
 
-  @Property({ nullable: true })
+  @Property({ type: 'number', nullable: true })
   startPosition?: number;
 
-  @Property({ nullable: true })
+  @Property({ type: 'number', nullable: true })
   finishPosition?: number;
 
   @ManyToOne(() => Race, { nullable: false })
