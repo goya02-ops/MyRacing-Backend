@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { User } from './user.entity.js';
 import { orm } from '../shared/orm.js';
+import { validateIdParam } from '../shared/validators.js';
 
 function sanitizeUserInput(req: Request, res: Response, next: NextFunction) {
   req.body.sanitizeInput = {
@@ -33,6 +34,12 @@ async function getOne(req: Request, res: Response) {
   try {
     const em = orm.em;
     const id = Number.parseInt(req.params.id);
+
+    if (!validateIdParam(req.params.id)) {
+      res.status(400).json({ message: 'ID inválido' });
+      return;
+    }
+
     const user = await em.findOneOrFail(User, { id });
     res.status(200).json({ message: 'User found: ', data: user });
   } catch (error: any) {
@@ -55,6 +62,12 @@ async function update(req: Request, res: Response) {
   try {
     const em = orm.em;
     const id = Number.parseInt(req.params.id);
+
+    if (!validateIdParam(req.params.id)) {
+      res.status(400).json({ message: 'ID inválido' });
+      return;
+    }
+
     const user = await em.findOneOrFail(User, { id });
     em.assign(user, req.body.sanitizeInput);
     await em.flush();
@@ -68,6 +81,12 @@ async function remove(req: Request, res: Response) {
   try {
     const em = orm.em;
     const id = Number.parseInt(req.params.id);
+
+    if (!validateIdParam(req.params.id)) {
+      res.status(400).json({ message: 'ID inválido' });
+      return;
+    }
+
     const user = await em.findOneOrFail(User, { id });
     await em.removeAndFlush(user);
     res.status(200).json({ message: 'User deleted', data: user });

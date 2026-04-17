@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import { orm } from '../shared/orm.js';
 import { User } from '../user/user.entity.js';
 import { JWT_SECRET, JWT_EXPIRES_IN, JWT_REFRESH_SECRET, JWT_REFRESH_EXPIRES_IN } from '../shared/config.js';
+import { validateRequired, validateIsString } from '../shared/validators.js';
 
 // Almacenamiento en memoria de refresh tokens (en producción usa Redis o BD)
 const refreshTokenStore = new Set<string>();
@@ -29,6 +30,22 @@ async function register(req: Request, res: Response) {
   try {
     const em = orm.em;
     const { userName, realName, email, password, type } = req.body;
+
+    const validationError = validateRequired(req.body, ['userName', 'email', 'password']);
+    if (validationError) {
+      res.status(400).json({ message: validationError });
+      return;
+    }
+
+    if (!validateIsString(req.body.userName, 'userName') && userName.length < 3) {
+      res.status(400).json({ message: 'userName debe tener al menos 3 caracteres' });
+      return;
+    }
+
+    if (password.length < 8) {
+      res.status(400).json({ message: 'La contraseña debe tener al menos 8 caracteres' });
+      return;
+    }
 
     const existingUser = await em.findOne(User, { 
       $or: [{ email }, { userName }] 
@@ -72,6 +89,12 @@ async function login(req: Request, res: Response) {
     const em = orm.em;
     const { emailOrUsername, password } = req.body;
 
+    const validationError = validateRequired(req.body, ['emailOrUsername', 'password']);
+    if (validationError) {
+      res.status(400).json({ message: validationError });
+      return;
+    }
+
     const user = await em.findOne(User, {
       $or: [
         { email: emailOrUsername },
@@ -109,7 +132,13 @@ async function refreshAccessToken(req: Request, res: Response) {
   try {
     const { refreshToken } = req.body;
 
-    if (!refreshToken) {
+    const validationError = validateRequired(req.body, ['refreshToken']);
+    if (validationError) {
+      res.status(400).json({ message: validationError });
+      return;
+    }
+
+    if (!validateIsString(req.body, 'refreshToken')) {
       res.status(401).json({ message: 'Refresh token no proporcionado' });
       return;
     }
@@ -160,7 +189,13 @@ async function logout(req: Request, res: Response) {
   try {
     const { refreshToken } = req.body;
 
-    if (!refreshToken) {
+    const validationError = validateRequired(req.body, ['refreshToken']);
+    if (validationError) {
+      res.status(400).json({ message: validationError });
+      return;
+    }
+
+    if (!validateIsString(req.body, 'refreshToken')) {
       res.status(400).json({ message: 'Refresh token no proporcionado' });
       return;
     }

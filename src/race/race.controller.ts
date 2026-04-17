@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { Race } from './race.entity.js';
 import { validateDates } from '../race/race.logic.js';
 import { orm } from '../shared/orm.js';
+import { validateIdParam, validateRequired } from '../shared/validators.js';
 
 function sanitizeRaceInput(req: Request, res: Response, next: NextFunction) {
   req.body.sanitizeInput = {
@@ -31,6 +32,12 @@ async function getOne(req: Request, res: Response) {
   try {
     const em = orm.em;
     const id = Number.parseInt(req.params.id);
+
+    if (!validateIdParam(req.params.id)) {
+      res.status(400).json({ message: 'ID inválido' });
+      return;
+    }
+
     const race = await em.findOneOrFail(
       Race,
       { id },
@@ -45,6 +52,13 @@ async function getOne(req: Request, res: Response) {
 async function add(req: Request, res: Response) {
   try {
     const em = orm.em;
+
+    const validationError = validateRequired(req.body.sanitizeInput, ['raceDateTime', 'registrationDeadline', 'combination']);
+    if (validationError) {
+      res.status(400).json({ message: validationError });
+      return;
+    }
+
     const idCombination = Number.parseInt(req.body.sanitizeInput.combination);
     const validDates = await validateDates(
       req.body.sanitizeInput,
@@ -76,6 +90,12 @@ async function update(req: Request, res: Response) {
   try {
     const em = orm.em;
     const id = Number.parseInt(req.params.id);
+
+    if (!validateIdParam(req.params.id)) {
+      res.status(400).json({ message: 'ID inválido' });
+      return;
+    }
+
     const race = await em.findOneOrFail(Race, { id });
     const idCombination = Number.parseInt(req.body.sanitizeInput.combination);
 
@@ -111,6 +131,12 @@ async function remove(req: Request, res: Response) {
   try {
     const em = orm.em;
     const id = Number.parseInt(req.params.id);
+
+    if (!validateIdParam(req.params.id)) {
+      res.status(400).json({ message: 'ID inválido' });
+      return;
+    }
+
     const race = await em.findOneOrFail(Race, { id });
     await em.removeAndFlush(race);
     res.status(200).json({ message: 'Race deleted', data: race });
