@@ -14,7 +14,7 @@ import { Combination } from '../combination/combination.entity.js';
 
 @Entity()
 export class CircuitVersion extends BaseEntity {
-  @Property({ nullable: false })
+  @Property({ type: 'string', nullable: false })
   status!: string;
 
   @ManyToOne(() => Circuit, { nullable: false })

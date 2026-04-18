@@ -10,13 +10,13 @@ import { CircuitVersion } from '../circuit-version/circuit-version.entity.js';
 
 @Entity()
 export class Circuit extends BaseEntity {
-  @Property({ nullable: false })
+  @Property({ type: 'string', nullable: false })
   denomination!: string;
 
-  @Property({ nullable: false })
+  @Property({ type: 'string', nullable: false })
   description!: string;
 
-  @Property({ nullable: false })
+  @Property({ type: 'string', nullable: false })
   abbreviation!: string;
 
   @OneToMany(() => CircuitVersion, (circuitVersion) => circuitVersion.circuit, {

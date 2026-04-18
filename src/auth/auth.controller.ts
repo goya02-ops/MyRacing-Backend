@@ -1,9 +1,10 @@
-import { Request, Response } from "express";
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
-import { randomBytes } from "crypto";
-import { orm } from "../shared/orm.js";
-import { User } from "../user/user.entity.js";
+import { Request, Response } from 'express';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import { randomBytes } from 'crypto';
+import { orm } from '../shared/orm.js';
+import { User } from '../user/user.entity.js';
+import { handleControllerError } from '../shared/error.util.js';
 import {
   JWT_SECRET,
   JWT_EXPIRES_IN,
@@ -11,8 +12,8 @@ import {
   JWT_REFRESH_EXPIRES_IN,
   BREVO_API_KEY,
   FROM_EMAIL,
-  FRONTEND_URL,
-} from "../shared/config.js";
+  URL_FRONTEND,
+} from '../shared/config.js';
 
 interface ResetToken {
   token: string;
@@ -62,11 +63,11 @@ async function register(req: Request, res: Response) {
     // Validación simple: debe tener @ y un punto después del @
     if (
       !email ||
-      !email.includes("@") ||
-      email.split("@")[1]?.split(".").length < 2 ||
-      email.split("@")[1]?.split(".")[1]?.length < 2
+      !email.includes('@') ||
+      email.split('@')[1]?.split('.').length < 2 ||
+      email.split('@')[1]?.split('.')[1]?.length < 2
     ) {
-      res.status(400).json({ message: "El formato del email es inválido" });
+      res.status(400).json({ message: 'El formato del email es inválido' });
       return;
     }
 
@@ -76,7 +77,7 @@ async function register(req: Request, res: Response) {
 
     if (existingUser) {
       res.status(400).json({
-        message: "El email o nombre de usuario ya está registrado",
+        message: 'El email o nombre de usuario ya está registrado',
       });
       return;
     }
@@ -88,7 +89,7 @@ async function register(req: Request, res: Response) {
       realName,
       email,
       password: hashedPassword,
-      type: type || "Común",
+      type: type || 'Común',
     });
 
     await em.flush();
@@ -97,13 +98,13 @@ async function register(req: Request, res: Response) {
     const { password: _, ...userWithoutPassword } = user;
 
     res.status(201).json({
-      message: "Usuario registrado exitosamente",
+      message: 'Usuario registrado exitosamente',
       data: userWithoutPassword,
       accessToken,
       refreshToken,
     });
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
+  } catch (error) {
+    handleControllerError(error, res);
   }
 }
 
@@ -117,14 +118,14 @@ async function login(req: Request, res: Response) {
     });
 
     if (!user) {
-      res.status(401).json({ message: "Credenciales inválidas" });
+      res.status(401).json({ message: 'Credenciales inválidas' });
       return;
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
-      res.status(401).json({ message: "Credenciales inválidas" });
+      res.status(401).json({ message: 'Credenciales inválidas' });
       return;
     }
 
@@ -132,13 +133,13 @@ async function login(req: Request, res: Response) {
     const { password: _, ...userWithoutPassword } = user;
 
     res.status(200).json({
-      message: "Login exitoso",
+      message: 'Login exitoso',
       data: userWithoutPassword,
       accessToken,
       refreshToken,
     });
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
+  } catch (error) {
+    handleControllerError(error, res);
   }
 }
 
@@ -147,13 +148,13 @@ async function refreshAccessToken(req: Request, res: Response) {
     const { refreshToken } = req.body;
 
     if (!refreshToken) {
-      res.status(401).json({ message: "Refresh token no proporcionado" });
+      res.status(401).json({ message: 'Refresh token no proporcionado' });
       return;
     }
 
     // Verificar que el refresh token existe en nuestro store
     if (!refreshTokenStore.has(refreshToken)) {
-      res.status(403).json({ message: "Refresh token inválido o revocado" });
+      res.status(403).json({ message: 'Refresh token inválido o revocado' });
       return;
     }
 
@@ -165,7 +166,7 @@ async function refreshAccessToken(req: Request, res: Response) {
     const user = await em.findOne(User, { id: decoded.id });
 
     if (!user) {
-      res.status(403).json({ message: "Usuario no encontrado" });
+      res.status(403).json({ message: 'Usuario no encontrado' });
       return;
     }
 
@@ -181,18 +182,18 @@ async function refreshAccessToken(req: Request, res: Response) {
     );
 
     res.status(200).json({
-      message: "Token renovado exitosamente",
+      message: 'Token renovado exitosamente',
       accessToken: newAccessToken,
     });
-  } catch (error: any) {
+  } catch (error) {
     if (
-      error.name === "JsonWebTokenError" ||
-      error.name === "TokenExpiredError"
+      (error as any).name === 'JsonWebTokenError' ||
+      (error as any).name === 'TokenExpiredError'
     ) {
-      res.status(403).json({ message: "Refresh token inválido o expirado" });
+      res.status(403).json({ message: 'Refresh token inválido o expirado' });
       return;
     }
-    res.status(500).json({ message: error.message });
+    handleControllerError(error, res);
   }
 }
 
@@ -201,15 +202,15 @@ async function logout(req: Request, res: Response) {
     const { refreshToken } = req.body;
 
     if (!refreshToken) {
-      res.status(400).json({ message: "Refresh token no proporcionado" });
+      res.status(400).json({ message: 'Refresh token no proporcionado' });
       return;
     }
 
     refreshTokenStore.delete(refreshToken);
 
-    res.status(200).json({ message: "Sesión cerrada exitosamente" });
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    res.status(200).json({ message: 'Sesión cerrada exitosamente' });
+  } catch (error) {
+    handleControllerError(error, res);
   }
 }
 
@@ -225,31 +226,31 @@ async function forgotPassword(req: Request, res: Response) {
     if (!user || !user.id) {
       res.status(200).json({
         message:
-          "Si el email existe, recibirás las instrucciones para restablecer tu contraseña",
+          'Si el email existe, recibirás las instrucciones para restablecer tu contraseña',
       });
       return;
     }
 
-    const token = randomBytes(32).toString("hex");
+    const token = randomBytes(32).toString('hex');
     const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
 
     resetTokens.set(token, { token, userId: user.id, expiresAt });
 
-    const resetUrl = `${FRONTEND_URL}/reset-password?token=${token}`;
+    const resetUrl = `${URL_FRONTEND}/reset-password?token=${token}`;
 
-    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
-      method: "POST",
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
-        "api-key": BREVO_API_KEY,
+        'Content-Type': 'application/json',
+        'api-key': BREVO_API_KEY,
       },
       body: JSON.stringify({
         sender: {
-          name: "MyRacing",
+          name: 'MyRacing',
           email: FROM_EMAIL,
         },
         to: [{ email: user.email, name: user.userName }],
-        subject: "Restablecer contraseña - MyRacing",
+        subject: 'Restablecer contraseña - MyRacing',
         htmlContent: `
           <h1>Restablecer contraseña</h1>
           <p>Hola ${user.userName},</p>
@@ -264,17 +265,17 @@ async function forgotPassword(req: Request, res: Response) {
 
     if (!response.ok) {
       const errorData = await response.text();
-      console.error("Error de Brevo:", errorData);
-      throw new Error("Error al enviar email");
+      console.error('Error de Brevo:', errorData);
+      throw new Error('Error al enviar email');
     }
 
     res.status(200).json({
       message:
-        "Si el email existe, recibirás las instrucciones para restablecer tu contraseña",
+        'Si el email existe, recibirás las instrucciones para restablecer tu contraseña',
     });
   } catch (error: any) {
-    console.error("Error en forgotPassword:", error);
-    res.status(500).json({ message: "Error al procesar la solicitud" });
+    console.error('Error en forgotPassword:', error);
+    res.status(500).json({ message: 'Error al procesar la solicitud' });
   }
 }
 
@@ -286,7 +287,7 @@ async function resetPassword(req: Request, res: Response) {
     if (!token || !newPassword) {
       res
         .status(400)
-        .json({ message: "Token y nueva contraseña son requeridos" });
+        .json({ message: 'Token y nueva contraseña son requeridos' });
       return;
     }
 
@@ -295,14 +296,14 @@ async function resetPassword(req: Request, res: Response) {
     const tokenData = resetTokens.get(token);
 
     if (!tokenData || tokenData.expiresAt < new Date()) {
-      res.status(400).json({ message: "Token inválido o expirado" });
+      res.status(400).json({ message: 'Token inválido o expirado' });
       return;
     }
 
     const user = await em.findOne(User, { id: tokenData.userId });
 
     if (!user) {
-      res.status(400).json({ message: "Usuario no encontrado" });
+      res.status(400).json({ message: 'Usuario no encontrado' });
       return;
     }
 
@@ -311,10 +312,10 @@ async function resetPassword(req: Request, res: Response) {
 
     resetTokens.delete(token);
 
-    res.status(200).json({ message: "Contraseña actualizada exitosamente" });
+    res.status(200).json({ message: 'Contraseña actualizada exitosamente' });
   } catch (error: any) {
-    console.error("Error en resetPassword:", error);
-    res.status(500).json({ message: "Error al restablecer la contraseña" });
+    console.error('Error en resetPassword:', error);
+    res.status(500).json({ message: 'Error al restablecer la contraseña' });
   }
 }
 
