@@ -5,6 +5,7 @@ import { randomBytes } from 'crypto';
 import { orm } from '../shared/orm.js';
 import { User } from '../user/user.entity.js';
 import { handleControllerError } from '../shared/error.util.js';
+import { isValidEmail } from '../utils/validations.js';
 import {
   JWT_SECRET,
   JWT_EXPIRES_IN,
@@ -60,13 +61,8 @@ async function register(req: Request, res: Response) {
     const em = orm.em;
     const { userName, realName, email, password, type } = req.body;
 
-    // Validación simple: debe tener @ y un punto después del @
-    if (
-      !email ||
-      !email.includes('@') ||
-      email.split('@')[1]?.split('.').length < 2 ||
-      email.split('@')[1]?.split('.')[1]?.length < 2
-    ) {
+    // Validación de email
+    if (!email || !isValidEmail(email)) {
       res.status(400).json({ message: 'El formato del email es inválido' });
       return;
     }
