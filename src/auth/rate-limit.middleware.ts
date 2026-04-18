@@ -1,4 +1,4 @@
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 
 export const loginRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -6,8 +6,8 @@ export const loginRateLimiter = rateLimit({
   message: { message: 'Demasiados intentos de login. Intenta de nuevo en 15 minutos.' },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => {
-    return req.ip || req.headers['x-forwarded-for']?.toString() || 'unknown';
+  keyGenerator: (req, res) => {
+    return ipKeyGenerator(req, res) || 'unknown';
   },
 });
 
@@ -17,8 +17,8 @@ export const registerRateLimiter = rateLimit({
   message: { message: 'Demasiados registros. Intenta de nuevo en una hora.' },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => {
-    return req.ip || req.headers['x-forwarded-for']?.toString() || 'unknown';
+  keyGenerator: (req, res) => {
+    return ipKeyGenerator(req, res) || 'unknown';
   },
 });
 
@@ -28,7 +28,7 @@ export const refreshRateLimiter = rateLimit({
   message: { message: 'Demasiadas solicitudes de refresh. Intenta de nuevo en un minuto.' },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => {
-    return req.ip || req.headers['x-forwarded-for']?.toString() || 'unknown';
+  keyGenerator: (req, res) => {
+    return ipKeyGenerator(req, res) || 'unknown';
   },
 });
