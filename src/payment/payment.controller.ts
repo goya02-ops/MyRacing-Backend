@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { Request, Response } from 'express';
 import { MercadoPagoConfig, Preference, Payment } from 'mercadopago';
 import { orm } from '../shared/orm.js';
@@ -235,7 +236,35 @@ async function checkPaymentStatusHandler(req: Request, res: Response) {
   }
 }
 
+function validateMpSignature(body: any, signature: string): boolean {
+  if (!MERCADOPAGO_ACCESS_TOKEN) return false;
+  
+  const expected = crypto
+    .createHmac('sha256', MERCADOPAGO_ACCESS_TOKEN)
+    .update(JSON.stringify(body))
+    .digest('hex');
+  
+  return crypto.timingSafeEqual(
+    Buffer.from(signature),
+    Buffer.from(expected)
+  );
+}
+
 async function receiveWebhookHandler(req: Request, res: Response) {
+  const signature = req.headers['x-mp-signature'] as string;
+  
+  if (!signature) {
+    console.error('❌ Webhook sin firma HMAC');
+    res.sendStatus(401);
+    return;
+  }
+  
+  if (!validateMpSignature(req.body, signature)) {
+    console.error('❌ Firma HMAC inválida - posible ataque');
+    res.sendStatus(401);
+    return;
+  }
+
   res.sendStatus(200);
 
   const body = req.body;
