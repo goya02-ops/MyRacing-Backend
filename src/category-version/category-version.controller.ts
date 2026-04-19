@@ -7,13 +7,14 @@ function sanitizeCategoryVersionInput(
   res: Response,
   next: NextFunction
 ) {
-  //Esto lo que hace es limpiar los datos que llegan
+  const simulatorId = req.body.simulator?.id ?? req.body.simulator;
+  const categoryId = req.body.category?.id ?? req.body.category;
+
   req.body.sanitizeInput = {
     status: req.body.status,
-    simulator: req.body.simulator,
-    category: req.body.category,
+    simulator: simulatorId,
+    category: categoryId,
   };
-  //Toma los datos de arriba del body de la peticion
 
   Object.keys(req.body.sanitizeInput).forEach((key) => {
     if (req.body.sanitizeInput[key] === undefined)
@@ -61,7 +62,7 @@ async function getOne(req: Request, res: Response) {
 async function add(req: Request, res: Response) {
   try {
     const em = orm.em;
-    const categoryVersion = em.create(CategoryVersion, req.body);
+    const categoryVersion = em.create(CategoryVersion, req.body.sanitizeInput);
     await em.flush(); //El em.create la crea en memoria y em.flush realiza el insert
     const populatedCategoryVersion = await em.findOneOrFail(
       CategoryVersion,

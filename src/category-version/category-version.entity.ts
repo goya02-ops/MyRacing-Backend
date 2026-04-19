@@ -16,7 +16,7 @@ import { Combination } from '../combination/combination.entity.js';
 
 @Entity()
 export class CategoryVersion extends BaseEntity {
-  @Property({ nullable: false })
+  @Property({ type: 'string', nullable: false })
   status!: string;
 
   @ManyToOne(() => Category, { nullable: false })

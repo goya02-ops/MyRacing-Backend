@@ -27,3 +27,6 @@ dist/**/*
 
 ## built vscode extensions
 *.vsix
+
+# TypeScript incremental build cache (no needed with tsx)
+tsconfig.tsbuildinfo

@@ -33,9 +33,10 @@ export function authenticateToken(req: Request, res: Response, next: NextFunctio
   }
 }
 
-// Middleware para verificar si es admin
+
 export function requireAdmin(req: Request, res: Response, next: NextFunction) {
-  if (req.user?.type !== 'Admin') {
+  
+  if (req.user?.type?.toLowerCase() !== 'admin') {
     res.status(403).json({ message: 'Acceso denegado: se requiere permisos de administrador' });
     return;
   }

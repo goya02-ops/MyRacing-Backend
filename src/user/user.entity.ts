@@ -11,16 +11,16 @@ import { RaceUser } from '../race-user/race-user.entity.js';
 
 @Entity()
 export class User extends BaseEntity {
-  @Property({ nullable: false })
+  @Property({ type: 'string', nullable: false })
   userName!: string;
 
-  @Property({ nullable: false })
+  @Property({ type: 'string', nullable: false })
   realName!: string;
 
-  @Property({ nullable: false })
+  @Property({ type: 'string', nullable: false })
   email!: string;
 
-  @Property({ nullable: false })
+  @Property({ type: 'string', nullable: false })
   password!: string;
 
   @Enum(() => UserType)

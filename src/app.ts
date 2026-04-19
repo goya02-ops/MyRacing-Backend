@@ -14,19 +14,18 @@ import { membershipRouter } from './membership/membership.routes.js';
 import { raceRouter } from './race/race.routes.js';
 import { raceUserRouter } from './race-user/race-user.routes.js';
 import { authRouter } from './auth/auth.routes.js';
+import paymentRouter from './payment/payment.routes.js';
+import { errorHandler } from './shared/error-handler.middleware.js';
 import cors from 'cors';
 
 const app = express();
 app.use(express.json());
+app.use(cors());
 
-//luego de los middleware bases
 app.use((req, res, next) => {
   RequestContext.create(orm.em, next);
 });
 
-app.use(cors());
-
-//antes de las rutas y de los middleware de negocio
 app.use('/api/categories', categoryRouter);
 app.use('/api/circuits', circuitRouter);
 app.use('/api/simulators', simulatorRouter);
@@ -37,9 +36,11 @@ app.use('/api/combinations', combinationRouter);
 app.use('/api/membership', membershipRouter);
 app.use('/api/races', raceRouter);
 app.use('/api/race-users', raceUserRouter);
+app.use('/api/payment', paymentRouter);
 app.use('/api/auth', authRouter);
 
-// Middleware 404 debe ir AL FINAL, después de todas las rutas
+app.use(errorHandler);
+
 app.use((_, res) => {
   res.status(404).json({ message: 'Not Found' });
   return;

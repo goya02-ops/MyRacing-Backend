@@ -3,6 +3,7 @@ import { RaceUser } from './race-user.entity.js';
 import { orm } from '../shared/orm.js';
 import { User } from '../user/user.entity.js';
 import { Race } from '../race/race.entity.js';
+import { handleControllerError } from '../shared/error.util.js';
 
 function sanitizeRaceUserInput(
   req: Request,
@@ -22,6 +23,7 @@ function sanitizeRaceUserInput(
   next();
 }
 
+
 async function getAll(req: Request, res: Response) {
   try {
     const em = orm.em;
@@ -31,8 +33,8 @@ async function getAll(req: Request, res: Response) {
       { populate: ['race', 'user'] }
     );
     res.status(200).json({ message: 'Find all race users', data: raceUsers });
-  } catch (error: any) {
-    res.status(500).json({ data: error.message });
+  } catch (error) {
+    handleControllerError(error, res);
   }
 }
 
@@ -46,8 +48,8 @@ async function getOne(req: Request, res: Response) {
       { populate: ['race', 'user'] }
     );
     res.status(200).json({ message: 'Race user found', data: raceUser });
-  } catch (error: any) {
-    res.status(500).json({ data: error.message });
+  } catch (error) {
+    handleControllerError(error, res);
   }
 }
 
@@ -63,6 +65,15 @@ async function add(req: Request, res: Response) {
 
     if (isNaN(userId) || isNaN(raceId)) {
       return res.status(400).json({ message: 'user y race son requeridos' });
+    }
+
+    const existing = await em.findOne(RaceUser, {
+      user: userId,
+      race: raceId,
+    });
+
+    if (existing) {
+      return res.status(409).json({ message: 'El usuario ya está inscrito en esta carrera' });
     }
 
     const raceUser = em.create(RaceUser, {
@@ -82,8 +93,8 @@ async function add(req: Request, res: Response) {
     res
       .status(201)
       .json({ message: 'Race user created', data: populatedRaceUser });
-  } catch (error: any) {
-    res.status(500).json({ data: error.message });
+  } catch (error) {
+    handleControllerError(error, res);
   }
 }
 
@@ -102,8 +113,8 @@ async function update(req: Request, res: Response) {
     res
       .status(200)
       .json({ message: 'Race user updated', data: populatedRaceUser });
-  } catch (error: any) {
-    res.status(500).json({ data: error.message });
+  } catch (error) {
+    handleControllerError(error, res);
   }
 }
 
@@ -114,8 +125,8 @@ async function remove(req: Request, res: Response) {
     const raceUser = await em.findOneOrFail(RaceUser, { id });
     await em.removeAndFlush(raceUser);
     res.status(200).json({ message: 'Race user deleted', data: raceUser });
-  } catch (error: any) {
-    res.status(500).json({ data: error.message });
+  } catch (error) {
+    handleControllerError(error, res);
   }
 }
 
@@ -131,8 +142,25 @@ async function getByUser(req: Request, res: Response) {
     );
 
     res.status(200).json({ message: 'Race users found', data: raceUsers });
-  } catch (error: any) {
-    res.status(500).json({ data: error.message });
+  } catch (error) {
+    handleControllerError(error, res);
+  }
+}
+
+async function getMyRaces(req: Request, res: Response) {
+  try {
+    const em = orm.em;
+    const userId = req.user?.id; // ID del token (el usuario autenticado)
+    
+    const raceUsers = await em.find(
+      RaceUser,
+      { user: userId },
+      { populate: ['race', 'user'] }
+    );
+    
+    res.status(200).json({ message: 'Race users found', data: raceUsers });
+  } catch (error) {
+    handleControllerError(error, res);
   }
 }
 
@@ -144,4 +172,5 @@ export const RaceUserController = {
   update,
   remove,
   getByUser,
+  getMyRaces
 };

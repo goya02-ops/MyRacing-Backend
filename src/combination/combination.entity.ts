@@ -14,22 +14,22 @@ import { Race } from '../race/race.entity.js';
 
 @Entity()
 export class Combination extends BaseEntity {
-  @Property({ nullable: false })
+  @Property({ type: 'datetime', nullable: false })
   dateFrom!: Date;
 
-  @Property({ nullable: false })
+  @Property({ type: 'datetime', nullable: false })
   dateTo!: Date;
 
-  @Property({ nullable: false })
+  @Property({ type: 'number', nullable: false })
   lapsNumber!: number;
 
-  @Property({ nullable: false })
+  @Property({ type: 'number', nullable: false })
   raceIntervalMinutes!: number;
 
-  @Property({ nullable: false })
+  @Property({ type: 'number', nullable: false })
   obligatoryStopsQuantity!: number;
 
-  @Property({ nullable: false })
+  @Property({ type: 'string', nullable: false })
   userType!: string;
 
   @ManyToOne(() => CategoryVersion, { nullable: false })

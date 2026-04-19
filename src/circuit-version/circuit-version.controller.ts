@@ -7,10 +7,13 @@ function sanitizeCircuitVersionInput(
   res: Response,
   next: NextFunction
 ) {
+  const circuitId = req.body.circuit?.id ?? req.body.circuit;
+  const simulatorId = req.body.simulator?.id ?? req.body.simulator;
+
   req.body.sanitizeInput = {
     status: req.body.status,
-    circuit: req.body.circuit,
-    simulator: req.body.simulator,
+    circuit: circuitId,
+    simulator: simulatorId,
   };
 
   Object.keys(req.body.sanitizeInput).forEach((key) => {
@@ -62,7 +65,7 @@ async function findOne(req: Request, res: Response) {
 async function add(req: Request, res: Response) {
   try {
     const em = orm.em;
-    const circuitVersion = em.create(CircuitVersion, req.body);
+    const circuitVersion = em.create(CircuitVersion, req.body.sanitizeInput);
     await em.flush();
     const populatedCircuitVersion = await em.findOneOrFail(
       CircuitVersion,
