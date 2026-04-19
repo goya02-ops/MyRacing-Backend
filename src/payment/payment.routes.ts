@@ -1,5 +1,10 @@
 import { Router } from 'express';
-import { paymentController as controller } from './payment.controller.js';
+import {
+  createPreferenceHandler,
+  processPaymentHandler,
+  checkPaymentStatusHandler,
+  receiveWebhookHandler,
+} from './payment.controller.js';
 import { authenticateToken } from '../auth/auth.middleware.js';
 
 const paymentRouter = Router();
@@ -7,20 +12,20 @@ const paymentRouter = Router();
 paymentRouter.post(
   '/create-preference',
   authenticateToken,
-  controller.createPreferenceHandler
+  createPreferenceHandler
 );
 paymentRouter.post(
   '/process-payment',
   authenticateToken,
-  controller.processPaymentHandler
+  processPaymentHandler
 );
 
 paymentRouter.get(
   '/check-payment-status/:id',
   authenticateToken,
-  controller.checkPaymentStatusHandler
+  checkPaymentStatusHandler
 );
 
-paymentRouter.post('/wh-mp', controller.receiveWebhookHandler);
+paymentRouter.post('/wh-mp', receiveWebhookHandler);
 
 export default paymentRouter;

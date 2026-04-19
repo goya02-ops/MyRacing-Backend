@@ -1,326 +1,200 @@
-import crypto from 'crypto';
 import { Request, Response } from 'express';
-import { MercadoPagoConfig, Preference, Payment } from 'mercadopago';
 import { orm } from '../shared/orm.js';
-import { User, UserType } from '../user/user.entity.js';
-import { currentMembership } from '../utils/currentMembership.js';
+import { User } from '../user/user.entity.js';
+import { handleControllerError } from '../shared/error.util.js';
 import {
-  MERCADOPAGO_ACCESS_TOKEN,
-  URL_BACKEND,
-  URL_FRONTEND,
-  URL_WEBHOOK_MP, 
-} from '../shared/config.js';
+  createPreference as createPreferenceService,
+  processPayment as processPaymentService,
+  checkPaymentStatus as checkPaymentStatusService,
+  handleWebhook as handleWebhookService,
+} from './payment.service.js';
+import { sanitizePaymentInput } from './payment.utils.js';
 
-if (!MERCADOPAGO_ACCESS_TOKEN) {
-  throw new Error('Falta la variable de entorno MP_ACCESS_TOKEN');
-}
-
-const client = new MercadoPagoConfig({
-  accessToken: MERCADOPAGO_ACCESS_TOKEN,
-});
-const preferenceClient = new Preference(client);
-const paymentClient = new Payment(client);
-
-async function createPreferenceHandler(req: Request, res: Response) {
+/**
+ * Handler para crear una preferencia de pago.
+ * El frontend usa esta preferencia para mostrar el checkout de MP.
+ *
+ * Request: JWT token obligatorio
+ * Response: preferenceId para el checkout
+ */
+export async function createPreferenceHandler(
+  req: Request,
+  res: Response,
+): Promise<void> {
   try {
     const userPayload = req.user!;
-    const em = orm.em;
 
+    // Verificar que el usuario no sea ya premium o admin
     if (
       userPayload.type === 'premium' ||
       userPayload.type === 'admin' ||
       userPayload.type === 'Admin'
     ) {
-      return res
-        .status(400)
-        .json({ message: 'El usuario ya es premium o admin.' });
-    }
-
-    const cm = await currentMembership();
-    if (!cm || !cm.price) {
-      return res
-        .status(500)
-        .json({ message: 'No se pudo determinar el precio de la membresía.' });
-    }
-    9;
-    const user = await em.findOneOrFail(User, { id: userPayload.id });
-
-    const FRONTEND = (URL_FRONTEND || 'http://localhost:5173').trim();
-    const BACKEND = (URL_BACKEND || 'http://localhost:3000').trim();
-
-    const isLocalhost =
-      FRONTEND.includes('localhost') || FRONTEND.includes('127.0.0.1');
-
-    console.log('CREANDO PREFERENCIA 🖨️');
-
-    if (isLocalhost) {
-      console.warn(
-        '⚠️ Entorno Local detectado: auto_return desactivado por seguridad de MP.'
-      );
-    }
-
-    const preferenceBody: any = {
-      items: [
-        {
-          id: 'myracing-premium',
-          title: 'Membresía Premium MyRacing',
-          description: 'Acceso a todas las carreras y torneos premium.',
-          quantity: 1,
-          unit_price: cm.price,
-          currency_id: 'ARS',
-        },
-      ],
-      payer: {
-        email: user.email,
-        name: user.realName,
-      },
-      back_urls: {
-        success: `${FRONTEND}/payment-status`,
-        failure: `${FRONTEND}/payment-status`,
-        pending: `${FRONTEND}/payment-status`,
-      },
-
-      ...(!isLocalhost && { auto_return: 'approved' }),
-
-      external_reference: user.id!.toString(),
-      notification_url: `${URL_WEBHOOK_MP}`,
-
-      payment_methods: {
-        excluded_payment_methods: [{ id: 'ticket' }],
-        installments: 1,
-      },
-    };
-
-    const result = await preferenceClient.create({ body: preferenceBody });
-
-    console.log(`✅ Preferencia creada con ID: ${result.id}`);
-    res.status(201).json({ preferenceId: result.id });
-  } catch (error: any) {
-    console.error('❌ Error al crear la preferencia:', error);
-    res.status(500).json({ message: error.message || 'Error interno.' });
-  }
-}
-
-async function processPaymentHandler(req: Request, res: Response) {
-  const {
-    token,
-    payment_method_id,
-    issuer_id,
-    installments,
-    identification_type,
-    identification_number,
-  } = req.body;
-
-  const em = orm.em;
-  const userPayload = req.user!;
-
-  if (!token || !payment_method_id) {
-    const faltante = !token ? 'token' : 'payment_method_id';
-    return res.status(400).json({
-      message: `⚠️❌ Faltan datos obligatorios para procesar el pago. Dato faltante: ${faltante}`,
-    });
-  }
-
-  try {
-    const user = await em.findOneOrFail(User, { id: userPayload.id });
-    const cm = await currentMembership();
-
-    if (!cm || !cm.price) {
-      return res
-        .status(500)
-        .json({ message: '❌ No se pudo obtener el precio para el cobro.' });
-    }
-
-    const paymentData: any = {
-      transaction_amount: cm.price,
-      token: token,
-      payment_method_id: payment_method_id,
-      installments: installments || 1,
-      issuer_id: issuer_id,
-      description: 'Membresía Premium MyRacing',
-      external_reference: user.id!.toString(),
-      payer: {
-        email: user.email,
-        identification: {
-          type: identification_type,
-          number: identification_number,
-        },
-      },
-    };
-
-    const payment = await paymentClient.create({ body: paymentData });
-
-    if (payment.status === 'approved') {
-      user.type = UserType.PREMIUM;
-      em.assign(user, { type: UserType.PREMIUM });
-      await em.flush();
-
-      return res.status(200).json({
-        message: '🎊 Pago APROBADO. Membresía activada. 🎉',
-        status: payment.status,
-        paymentId: payment.id,
+      res.status(400).json({
+        message: 'User is already premium or admin',
       });
-    } else if (payment.status === 'rejected') {
-      return res.status(400).json({
-        message:
-          '❌❌❌ Pago RECHAZADO. Por favor, verifique los datos de su tarjeta.',
-        paymentId: payment.id,
-        status: payment.status,
-        reason: payment.status_detail,
-      });
-    } else {
-      return res.status(202).json({
-        message:
-          '😒😒😒 Pago en proceso. Recibirás un email de Mercado Pago con el resultado.',
-        status: payment.status,
-        paymentId: payment.id,
-      });
-    }
-  } catch (error: any) {
-    console.error('😡😡😡 Error fatal al procesar el pago final:', error);
-    return res.status(400).json({
-      message:
-        'No se pudo completar el pago, intente con otra tarjeta o método.',
-    });
-  }
-}
-
-async function checkPaymentStatusHandler(req: Request, res: Response) {
-  const { id } = req.params;
-  const userPayload = req.user!;
-
-  if (!id) {
-    return res.status(400).json({ message: 'Se requiere el ID del pago.' });
-  }
-
-  try {
-    const payment = await paymentClient.get({ id: Number(id) });
-
-    if (payment.external_reference !== userPayload.id.toString()) {
-      return res
-        .status(403)
-        .json({ message: 'Este pago no corresponde a tu usuario.' });
-    }
-
-    if (payment.status === 'approved') {
-      const em = orm.em;
-      const user = await em.findOneOrFail(User, { id: userPayload.id });
-
-      if (user.type !== UserType.PREMIUM) {
-        user.type = UserType.PREMIUM;
-        await em.flush();
-        console.log(
-          `😮‍💨👌 Verificación Manual: Usuario ${user.userName} actualizado a PREMIUM.`
-        );
-      } else {
-        console.log();
-        `✅ Verificación Manual: El usuario ya era Premium.`;
-      }
-
-      return res.json({
-        status: 'approved',
-        message: 'Pago verificado y membresía activada.',
-        user: user,
-      });
-    }
-
-    return res.json({
-      status: payment.status,
-      message: 'El pago aún no está aprobado.',
-    });
-  } catch (error: any) {
-    console.error('😡😡 Error verificando pago manualmente:', error);
-    return res
-      .status(500)
-      .json({ message: 'No se pudo verificar el pago en Mercado Pago.' });
-  }
-}
-
-function validateMpSignature(body: any, signature: string): boolean {
-  if (!MERCADOPAGO_ACCESS_TOKEN) return false;
-  
-  const expected = crypto
-    .createHmac('sha256', MERCADOPAGO_ACCESS_TOKEN)
-    .update(JSON.stringify(body))
-    .digest('hex');
-  
-  return crypto.timingSafeEqual(
-    Buffer.from(signature),
-    Buffer.from(expected)
-  );
-}
-
-async function receiveWebhookHandler(req: Request, res: Response) {
-  const signature = req.headers['x-mp-signature'] as string;
-  
-  if (!signature) {
-    console.error('❌ Webhook sin firma HMAC');
-    res.sendStatus(401);
-    return;
-  }
-  
-  if (!validateMpSignature(req.body, signature)) {
-    console.error('❌ Firma HMAC inválida - posible ataque');
-    res.sendStatus(401);
-    return;
-  }
-
-  res.sendStatus(200);
-
-  const body = req.body;
-
-  console.log('🔔 WEBHOOK RECIBIDO');
-
-  const type = body.type;
-
-  const paymentId = body.data.id;
-
-  console.log(`🔎 Evento: ${type} | ID: ${paymentId}`);
-
-  if (type === 'merchant_order') {
-    console.log(
-      'ℹ️ Webhook: Es una Orden Comercial. Ignoramos y esperamos el aviso de "payment".'
-    );
-    return;
-  }
-
-  if (!paymentId || type !== 'payment') {
-    console.log('⚠️ Webhook ignorado: No es un pago o falta ID.');
-    return;
-  }
-
-  try {
-    const payment = await paymentClient.get({ id: Number(paymentId) });
-
-    console.log(
-      `💳 Estado Pago: ${payment.status} | Ref: ${payment.external_reference}`
-    );
-
-    const userId = payment.external_reference;
-    if (!userId) return;
-
-    const em = orm.em;
-    const user = await em.findOne(User, { id: Number(userId) });
-
-    if (!user) {
-      console.error(`❌ Usuario ID ${userId} no encontrado.`);
       return;
     }
 
-    if (payment.status === 'approved') {
-      if (user.type !== UserType.PREMIUM) {
-        user.type = UserType.PREMIUM;
-        await em.flush();
-        console.log(
-          `✅ ¡ÉXITO! Usuario ${user.realName} (ID ${user.id}) actualizado a PREMIUM.`
-        );
-      } else {
-        console.log(`ℹ️ El usuario ya era Premium.`);
-      }
+    // Obtener datos del usuario desde la DB
+    const em = orm.em;
+    const user = await em.findOneOrFail(User, { id: userPayload.id });
+
+    // Llamar al service
+    const result = await createPreferenceService(
+      user.id!,
+      user.email,
+      user.realName,
+    );
+
+    if (!result.success) {
+      res
+        .status(500)
+        .json({ message: result.error || 'Failed to create preference' });
+      return;
     }
-  } catch (error: any) {
-    console.error('❌ Error procesando pago:', error.message);
+
+    // Devolver preferenceId al frontend
+    res.status(201).json({ preferenceId: result.data?.preferenceId });
+  } catch (error) {
+    handleControllerError(error, res);
   }
+}
+
+/**
+ * Handler para procesar un pago con tarjeta.
+ * Recibe el token de la tarjeta desde el frontend.
+ *
+ * Request: JWT token + token de tarjeta + payment_method_id
+ * Response: Estado del pago (approved/rejected/pending)
+ */
+export async function processPaymentHandler(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  try {
+    const userPayload = req.user!;
+
+    // Sanitizar y validar input
+    const input = sanitizePaymentInput(req.body);
+
+    if (!input) {
+      res.status(400).json({
+        message: 'Missing token or payment_method_id',
+      });
+      return;
+    }
+
+    // Obtener usuario desde DB
+    const em = orm.em;
+    const user = await em.findOneOrFail(User, { id: userPayload.id });
+
+    // Llamar al service
+    const result = await processPaymentService(user.id!, user.email, input);
+
+    if (!result.success) {
+      // Manejar errores específicos
+      if (result.error === 'Payment already in progress') {
+        res.status(409).json({ message: result.error });
+        return;
+      }
+      if (result.error === 'Membership price not found') {
+        res.status(500).json({ message: result.error });
+        return;
+      }
+      res.status(400).json({ message: result.error });
+      return;
+    }
+
+    const payment = result.data!;
+
+    // Responder según el estado del pago
+    if (payment.status === 'approved') {
+      res.status(200).json({
+        status: 'approved',
+        message: 'Payment approved, membership activated',
+        paymentId: payment.id,
+      });
+      return;
+    }
+
+    if (payment.status === 'rejected') {
+      res.status(400).json({
+        status: 'rejected',
+        message: 'Payment rejected',
+        paymentId: payment.id,
+        reason: payment.status_detail,
+      });
+      return;
+    }
+
+    // Pago pendiente (en proceso)
+    res.status(202).json({
+      status: 'pending',
+      message: 'Payment in progress',
+      paymentId: payment.id,
+    });
+  } catch (error) {
+    handleControllerError(error, res);
+  }
+}
+
+/**
+ * Handler para consultar el estado de un pago.
+ * Útil para hacer polling desde el frontend.
+ *
+ * Request: JWT token + paymentId en params
+ * Response: Estado actual del pago
+ */
+export async function checkPaymentStatusHandler(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  try {
+    const { id } = req.params;
+    const userPayload = req.user!;
+
+    if (!id) {
+      res.status(400).json({ message: 'Payment ID is required' });
+      return;
+    }
+
+    // Llamar al service
+    const result = await checkPaymentStatusService(userPayload.id, Number(id));
+
+    if (!result.success) {
+      res.status(400).json({ message: result.error });
+      return;
+    }
+
+    const payment = result.data!;
+
+    res.status(200).json({
+      status: payment.status,
+      message: 'Payment status',
+      data: payment,
+    });
+  } catch (error) {
+    handleControllerError(error, res);
+  }
+}
+
+/**
+ * Handler para el webhook de MercadoPago.
+ * MP llama a este endpoint cuando cambia el estado de un pago.
+ *
+ * Request: Body con type + data.id
+ * Response: 200 (ACK)
+ */
+export async function receiveWebhookHandler(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  // Procesar webhook (validación de firma dentro del service)
+  await handleWebhookService(req.body);
+
+  // Siempre responder 200 a MP
+  res.sendStatus(200);
 }
 
 export const paymentController = {
