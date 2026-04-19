@@ -2,7 +2,8 @@ import { Request, Response, NextFunction } from 'express';
 import { Race } from './race.entity.js';
 import { validateDates } from '../race/race.logic.js';
 import { orm } from '../shared/orm.js';
-import { validateIdParam, validateRequired } from '../shared/validators.js';
+import { validateIdParam, validateRequired } from '../utils/validations.js';
+import { handleControllerError } from '../shared/error.util.js';
 
 function sanitizeRaceInput(req: Request, res: Response, next: NextFunction) {
   req.body.sanitizeInput = {
@@ -20,10 +21,17 @@ function sanitizeRaceInput(req: Request, res: Response, next: NextFunction) {
 
 async function getCurrentByCombination(req: Request, res: Response) {
   try {
+    const { previousLimit, nextLimit, combination } = req.params;
+
+    if (!validateIdParam(combination)) {
+      res.status(400).json({ message: 'ID de combinación inválido' });
+      return;
+    }
+
     const em = orm.em;
-    const limitPrev = Number.parseInt(req.params.previousLimit);
-    const limitNext = Number.parseInt(req.params.nextLimit);
-    const idCombination = Number.parseInt(req.params.combination);
+    const limitPrev = Number.parseInt(previousLimit) || 5;
+    const limitNext = Number.parseInt(nextLimit) || 5;
+    const idCombination = Number.parseInt(combination);
     const currentDate = new Date();
 
     const [previousRaces, nextRaces] = await Promise.all([
@@ -66,36 +74,33 @@ async function getCurrentByCombination(req: Request, res: Response) {
         nextRaces,
       },
     });
-  } catch (error: any) {
-    res.status(500).json({ data: error.message });
+  } catch (error) {
+    handleControllerError(error, res);
   }
 }
 
 async function getOne(req: Request, res: Response) {
   try {
-    const em = orm.em;
-    const id = Number.parseInt(req.params.id);
-
     if (!validateIdParam(req.params.id)) {
       res.status(400).json({ message: 'ID inválido' });
       return;
     }
 
+    const em = orm.em;
+    const id = Number.parseInt(req.params.id);
     const race = await em.findOneOrFail(
       Race,
       { id },
       { populate: ['combination', 'raceUsers'] }
     );
     res.status(200).json({ message: 'Race found', data: race });
-  } catch (error: any) {
-    res.status(500).json({ data: error.message });
+  } catch (error) {
+    handleControllerError(error, res);
   }
 }
 
 async function add(req: Request, res: Response) {
   try {
-    const em = orm.em;
-
     const validationError = validateRequired(req.body.sanitizeInput, ['raceDateTime', 'registrationDeadline', 'combination']);
     if (validationError) {
       res.status(400).json({ message: validationError });
@@ -103,19 +108,22 @@ async function add(req: Request, res: Response) {
     }
 
     const idCombination = Number.parseInt(req.body.sanitizeInput.combination);
-    const validDates = await validateDates(
-      req.body.sanitizeInput,
-      idCombination
-    );
+    
+    if (!validateIdParam(idCombination)) {
+      res.status(400).json({ message: 'ID de combinación inválido' });
+      return;
+    }
+
+    const validDates = await validateDates(req.body.sanitizeInput, idCombination);
 
     if (!validDates) {
       res.status(400).json({
-        message:
-          'Invalid dates: registrationDeadline must be before raceDateTime',
+        message: 'registrationDeadline debe ser anterior a raceDateTime',
       });
       return;
     }
 
+    const em = orm.em;
     const race = em.create(Race, req.body.sanitizeInput);
     await em.flush();
     const populatedRace = await em.findOneOrFail(
@@ -124,34 +132,49 @@ async function add(req: Request, res: Response) {
       { populate: ['combination'] }
     );
     res.status(201).json({ message: 'Race created', data: populatedRace });
-  } catch (error: any) {
-    res.status(500).json({ data: error.message });
+  } catch (error) {
+    handleControllerError(error, res);
   }
 }
 
 async function update(req: Request, res: Response) {
   try {
-    const em = orm.em;
-    const id = Number.parseInt(req.params.id);
-
     if (!validateIdParam(req.params.id)) {
       res.status(400).json({ message: 'ID inválido' });
       return;
     }
 
+    const em = orm.em;
+    const id = Number.parseInt(req.params.id);
     const race = await em.findOneOrFail(Race, { id });
-    const idCombination = Number.parseInt(req.body.sanitizeInput.combination);
+
+    if (req.body.sanitizeInput?.combination) {
+      const idCombination = Number.parseInt(req.body.sanitizeInput.combination);
+      
+      if (!validateIdParam(idCombination)) {
+        res.status(400).json({ message: 'ID de combinación inválido' });
+        return;
+      }
+    }
 
     if (
       req.body.sanitizeInput.raceDateTime &&
       req.body.sanitizeInput.registrationDeadline
     ) {
-      // Se espera que se envie un formulario modificando ambas fechas
-      const validDates = validateDates(req.body.sanitizeInput, idCombination);
+      const combinationIdFromBody = req.body.sanitizeInput.combination;
+      const combinationId = combinationIdFromBody 
+        ? Number.parseInt(combinationIdFromBody as string) 
+        : race.combination?.id;
+      
+      if (!combinationId) {
+        res.status(400).json({ message: 'ID de combinación requerido' });
+        return;
+      }
+
+      const validDates = validateDates(req.body.sanitizeInput, combinationId);
       if (!validDates) {
         res.status(400).json({
-          message:
-            'Invalid dates: registrationDeadline must be before raceDateTime',
+          message: 'registrationDeadline debe ser anterior a raceDateTime',
         });
         return;
       }
@@ -165,26 +188,25 @@ async function update(req: Request, res: Response) {
       { populate: ['combination'] }
     );
     res.status(200).json({ message: 'Race updated', data: populatedRace });
-  } catch (error: any) {
-    res.status(500).json({ data: error.message });
+  } catch (error) {
+    handleControllerError(error, res);
   }
 }
 
 async function remove(req: Request, res: Response) {
   try {
-    const em = orm.em;
-    const id = Number.parseInt(req.params.id);
-
     if (!validateIdParam(req.params.id)) {
       res.status(400).json({ message: 'ID inválido' });
       return;
     }
 
+    const em = orm.em;
+    const id = Number.parseInt(req.params.id);
     const race = await em.findOneOrFail(Race, { id });
     await em.removeAndFlush(race);
     res.status(200).json({ message: 'Race deleted', data: race });
-  } catch (error: any) {
-    res.status(500).json({ data: error.message });
+  } catch (error) {
+    handleControllerError(error, res);
   }
 }
 

@@ -1,8 +1,7 @@
 import bcrypt from 'bcrypt';
 import { orm } from '../shared/orm.js';
 import { User, UserType } from '../user/user.entity.js';
-import { isValidEmail } from '../utils/validations.js';
-import { validateRequired } from '../shared/validators.js';
+import { isValidEmail, validateRequired } from '../utils/validations.js';
 import { TokenService } from './token.service.js';
 import { EmailService } from './email.service.js';
 import { AUTH_CONFIG } from './auth.constants.js';
