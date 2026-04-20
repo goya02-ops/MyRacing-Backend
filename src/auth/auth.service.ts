@@ -23,12 +23,9 @@ interface LoginInput {
 interface AuthResult {
   success: boolean;
   message: string;
-  data?: {
-    user: Omit<User, 'password'>;
-    accessToken: string;
-    refreshToken: string;
-  };
+  user?: Omit<User, 'password'>;
   accessToken?: string;
+  refreshToken?: string;
 }
 
 export const AuthService = {
@@ -84,11 +81,9 @@ export const AuthService = {
     return {
       success: true,
       message: 'Usuario registrado exitosamente',
-      data: {
-        user: userWithoutPassword as Omit<User, 'password'>,
-        accessToken,
-        refreshToken,
-      },
+      user: userWithoutPassword as Omit<User, 'password'>,
+      accessToken,
+      refreshToken,
     };
   },
 
@@ -126,11 +121,9 @@ export const AuthService = {
     return {
       success: true,
       message: 'Login exitoso',
-      data: {
-        user: userWithoutPassword as Omit<User, 'password'>,
-        accessToken,
-        refreshToken,
-      },
+      user: userWithoutPassword as Omit<User, 'password'>,
+      accessToken,
+      refreshToken,
     };
   },
 

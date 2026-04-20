@@ -1,176 +1,158 @@
-import { Request, Response, NextFunction } from 'express';
-import { RaceUser } from './race-user.entity.js';
-import { orm } from '../shared/orm.js';
-import { User } from '../user/user.entity.js';
-import { Race } from '../race/race.entity.js';
+
+import type { Request, Response } from 'express';
 import { handleControllerError } from '../shared/error.util.js';
+import {
+  addRaceUser,
+  getAllRaceUsers,
+  getOneRaceUser,
+  updateRaceUser,
+  removeRaceUser,
+  getRaceUsersByUser,
+} from './race-user.service.js';
+import { sanitizeRaceUserInput, parseSanitizedInput } from './race-user.utils.js';
 
-function sanitizeRaceUserInput(
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
-  req.body.sanitizeInput = {
-    startPosition: req.body.startPosition,
-    finishPosition: req.body.finishPosition,
-    raceId: req.body.raceId,
-    userId: req.body.userId,
-  };
-  Object.keys(req.body.sanitizeInput).forEach((key) => {
-    if (req.body.sanitizeInput[key] === undefined)
-      delete req.body.sanitizeInput[key];
-  });
-  next();
-}
-
-
-async function getAll(req: Request, res: Response) {
+export async function getAll(req: Request, res: Response): Promise<void> {
   try {
-    const em = orm.em;
-    const raceUsers = await em.find(
-      RaceUser,
-      {},
-      { populate: ['race', 'user'] }
-    );
-    res.status(200).json({ message: 'Find all race users', data: raceUsers });
+    const data = await getAllRaceUsers();
+    res.status(200).json({ message: 'Find all race users', data });
   } catch (error) {
     handleControllerError(error, res);
   }
 }
 
-async function getOne(req: Request, res: Response) {
+export async function getOne(req: Request, res: Response): Promise<void> {
   try {
-    const em = orm.em;
     const id = Number.parseInt(req.params.id);
-    const raceUser = await em.findOneOrFail(
-      RaceUser,
-      { id },
-      { populate: ['race', 'user'] }
-    );
-    res.status(200).json({ message: 'Race user found', data: raceUser });
+    const data = await getOneRaceUser(id);
+    
+    if (!data) {
+      res.status(404).json({ message: 'Race user not found' });
+      return;
+    }
+    
+    res.status(200).json({ message: 'Race user found', data });
   } catch (error) {
     handleControllerError(error, res);
   }
 }
 
-async function add(req: Request, res: Response) {
+export async function add(req: Request, res: Response): Promise<void> {
   try {
-    const em = orm.em;
-
-    const userId = Number.parseInt(req.body.sanitizeInput.userId);
-    const raceId = Number.parseInt(req.body.sanitizeInput.raceId);
-
-    const user = await em.findOneOrFail(User, userId);
-    const race = await em.findOneOrFail(Race, raceId);
-
-    if (isNaN(userId) || isNaN(raceId)) {
-      return res.status(400).json({ message: 'user y race son requeridos' });
+    const input = sanitizeRaceUserInput(req);
+    const { userId, raceId } = parseSanitizedInput(input);
+    
+    const result = await addRaceUser({ userId, raceId });
+    
+    if (!result.success) {
+      if (result.error === 'User already registered for this race') {
+        res.status(409).json({ message: result.error });
+        return;
+      }
+      res.status(400).json({ message: result.error });
+      return;
     }
 
-    const existing = await em.findOne(RaceUser, {
-      user: userId,
-      race: raceId,
-    });
+    res.status(201).json({ message: 'Race user created', data: result.data });
+  } catch (error) {
+    handleControllerError(error, res);
+  }
+}
 
-    if (existing) {
-      return res.status(409).json({ message: 'El usuario ya está inscrito en esta carrera' });
+export async function update(req: Request, res: Response): Promise<void> {
+  try {
+    const id = Number.parseInt(req.params.id);
+    const input = sanitizeRaceUserInput(req);
+    
+    const result = await updateRaceUser(id, input);
+    
+    if (!result.success) {
+      res.status(404).json({ message: result.error });
+      return;
     }
 
-    const raceUser = em.create(RaceUser, {
-      user,
-      race,
-      registrationDateTime: new Date(),
-    });
-
-    await em.flush();
-
-    const populatedRaceUser = await em.findOneOrFail(
-      RaceUser,
-      { id: raceUser.id },
-      { populate: ['race', 'user'] }
-    );
-
-    res
-      .status(201)
-      .json({ message: 'Race user created', data: populatedRaceUser });
+    res.status(200).json({ message: 'Race user updated' });
   } catch (error) {
     handleControllerError(error, res);
   }
 }
 
-async function update(req: Request, res: Response) {
+export async function remove(req: Request, res: Response): Promise<void> {
   try {
-    const em = orm.em;
     const id = Number.parseInt(req.params.id);
-    const raceUser = await em.findOneOrFail(RaceUser, { id });
-    em.assign(raceUser, req.body.sanitizeInput);
-    await em.flush();
-    const populatedRaceUser = await em.findOneOrFail(
-      RaceUser,
-      { id: raceUser.id },
-      { populate: ['race', 'user'] }
-    );
-    res
-      .status(200)
-      .json({ message: 'Race user updated', data: populatedRaceUser });
-  } catch (error) {
-    handleControllerError(error, res);
-  }
-}
-
-async function remove(req: Request, res: Response) {
-  try {
-    const em = orm.em;
-    const id = Number.parseInt(req.params.id);
-    const raceUser = await em.findOneOrFail(RaceUser, { id });
-    await em.removeAndFlush(raceUser);
-    res.status(200).json({ message: 'Race user deleted', data: raceUser });
-  } catch (error) {
-    handleControllerError(error, res);
-  }
-}
-
-async function getByUser(req: Request, res: Response) {
-  try {
-    const em = orm.em;
-    const userId = Number.parseInt(req.query.userId as string);
-
-    const raceUsers = await em.find(
-      RaceUser,
-      { user: userId },
-      { populate: ['race', 'user'] }
-    );
-
-    res.status(200).json({ message: 'Race users found', data: raceUsers });
-  } catch (error) {
-    handleControllerError(error, res);
-  }
-}
-
-async function getMyRaces(req: Request, res: Response) {
-  try {
-    const em = orm.em;
-    const userId = req.user?.id; // ID del token (el usuario autenticado)
+    const userPayload = req.user as any;
+    const isAdmin = userPayload?.type === 'admin';
     
-    const raceUsers = await em.find(
-      RaceUser,
-      { user: userId },
-      { populate: ['race', 'user'] }
-    );
+    const result = await removeRaceUser(id, userPayload?.id, isAdmin);
     
-    res.status(200).json({ message: 'Race users found', data: raceUsers });
+    if (!result.success) {
+      if (result.error === 'RaceUser not found') {
+        res.status(404).json({ message: result.error });
+        return;
+      }
+      res.status(403).json({ message: result.error });
+      return;
+    }
+
+    res.status(200).json({ message: 'Race user deleted' });
+  } catch (error) {
+    handleControllerError(error, res);
+  }
+}
+
+export async function getByUser(req: Request, res: Response): Promise<void> {
+  try {
+    const userId = Number(req.query.userId);
+    const data = await getRaceUsersByUser(userId);
+    res.status(200).json({ message: 'Race users found', data });
+  } catch (error) {
+    handleControllerError(error, res);
+  }
+}
+
+export async function getMyRaces(req: Request, res: Response): Promise<void> {
+  try {
+    const userPayload = req.user as any;
+    const data = await getRaceUsersByUser(userPayload?.id);
+    res.status(200).json({ message: 'My races found', data });
+  } catch (error) {
+    handleControllerError(error, res);
+  }
+}
+
+export async function removeSelf(req: Request, res: Response): Promise<void> {
+  try {
+    const raceId = Number.parseInt(req.params.raceId);
+    const userPayload = req.user as any;
+    const userId = userPayload?.id;
+    
+    const myRaces = await getRaceUsersByUser(userId);
+    const raceUser = myRaces.find(ru => ru.race.id === raceId);
+    
+    if (!raceUser) {
+      res.status(404).json({ message: 'Not registered for this race' });
+      return;
+    }
+    
+    const result = await removeRaceUser(raceUser.id, userId, false);
+    
+    if (!result.success) {
+      res.status(400).json({ message: result.error });
+      return;
+    }
+
+    res.status(200).json({ message: 'Unregistered successfully' });
   } catch (error) {
     handleControllerError(error, res);
   }
 }
 
 export const RaceUserController = {
-  sanitizeRaceUserInput,
   getAll,
   getOne,
   add,
   update,
   remove,
   getByUser,
-  getMyRaces
+  getMyRaces,
+  removeSelf,
 };

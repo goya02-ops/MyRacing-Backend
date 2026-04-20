@@ -17,8 +17,11 @@ export const AuthController = {
 
       const status = result.success ? 201 : 400;
       res.status(status).json({
+        success: result.success,
         message: result.message,
-        ...(result.data && { data: result.data }),
+        ...(result.user && { user: result.user }),
+        ...(result.accessToken && { accessToken: result.accessToken }),
+        ...(result.refreshToken && { refreshToken: result.refreshToken }),
       });
     } catch (error) {
       handleControllerError(error, res);
@@ -33,8 +36,11 @@ export const AuthController = {
 
       const status = result.success ? 200 : 401;
       res.status(status).json({
+        success: result.success,
         message: result.message,
-        ...(result.data && { data: result.data }),
+        ...(result.user && { user: result.user }),
+        ...(result.accessToken && { accessToken: result.accessToken }),
+        ...(result.refreshToken && { refreshToken: result.refreshToken }),
       });
     } catch (error) {
       handleControllerError(error, res);
