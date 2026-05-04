@@ -61,6 +61,11 @@ async function add(req: Request, res: Response) {
     const user = await em.findOneOrFail(User, userId);
     const race = await em.findOneOrFail(Race, raceId);
 
+    if (new Date() > race.registrationDeadline) {
+      res.status(400).json({ message: 'La inscripción a esta carrera ha cerrado' });
+      return;
+    }
+
     if (isNaN(userId) || isNaN(raceId)) {
       return res.status(400).json({ message: 'user y race son requeridos' });
     }
