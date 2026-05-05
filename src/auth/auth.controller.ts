@@ -13,7 +13,8 @@ function generateTokens(user: User) {
   const payload = {
     id: user.id,
     userName: user.userName,
-    type: user.type
+    type: user.type,
+    tokenVersion: user.tokenVersion
   };
 
   const accessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
@@ -48,7 +49,8 @@ async function register(req: Request, res: Response) {
       realName,
       email,
       password: hashedPassword,
-      type: type || 'Común'
+      type: type || 'Común',
+      tokenVersion: 1
     });
 
     await em.flush();

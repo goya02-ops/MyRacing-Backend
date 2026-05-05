@@ -26,6 +26,9 @@ export class User extends BaseEntity {
   @Enum(() => UserType)
   type!: UserType;
 
+  @Property({ default: 1 })
+  tokenVersion: number = 1;
+
   @OneToMany(() => RaceUser, (raceUser) => raceUser.user, {
     cascade: [Cascade.ALL],
   })
