@@ -134,12 +134,18 @@ async function refreshAccessToken(req: Request, res: Response) {
       return;
     }
 
+    if (decoded.tokenVersion !== user.tokenVersion) {
+      res.status(403).json({ message: 'Token revocado - sesión expirada' });
+      return;
+    }
+
     // Generar nuevo access token (mantenemos el mismo refresh token)
     const newAccessToken = jwt.sign(
       {
         id: user.id,
         userName: user.userName,
-        type: user.type
+        type: user.type,
+        tokenVersion: user.tokenVersion
       },
       JWT_SECRET,
       { expiresIn: JWT_EXPIRES_IN }
@@ -165,6 +171,15 @@ async function logout(req: Request, res: Response) {
     if (!refreshToken) {
       res.status(400).json({ message: 'Refresh token no proporcionado' });
       return;
+    }
+
+    const em = orm.em;
+    const decoded = jwt.verify(refreshToken, JWT_REFRESH_SECRET) as any;
+    const user = await em.findOne(User, { id: decoded.id });
+
+    if (user) {
+      user.tokenVersion += 1;
+      await em.flush();
     }
 
     // Remover el refresh token del store
