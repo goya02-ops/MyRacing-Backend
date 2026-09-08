@@ -1,0 +1,24 @@
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+jobs:
+  deploy:
+    name: Deploy backend
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success'
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy checklist
+        run: |
+          echo "El CI pasó: este job solo corre si los tests y el build del backend terminaron con éxito."
+          echo "PLATAFORMA: Railway/Render con buildpack (sin Docker)."
+          echo "CREDENCIALES: definir como secrets del repo las variables del backend:"
+          echo "  DB_*, JWT_SECRET, JWT_REFRESH_SECRET, MERCADOPAGO_ACCESS_TOKEN, URL_*"
+          echo "Deploy manual inicial pendiente: configurar el servicio conectado a este repo (placeholder)."
