@@ -73,3 +73,26 @@ jobs:
           path: coverage/
           include-hidden-files: true
           if-no-files-found: ignore
+
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+    # Gate de producción: solo corre en PRs a main y pushes a main.
+    # En develop no corre (ahí solo se exige que los tests pasen, sin coverage).
+    if: >-
+      (github.event_name == 'pull_request' && github.base_ref == 'main') ||
+      (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Coverage total ≥80% (vitest thresholds)
+        run: pnpm test:coverage
