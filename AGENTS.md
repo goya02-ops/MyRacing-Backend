@@ -10,8 +10,12 @@ Express 5 + TypeScript REST API, MikroORM 6 + MySQL 8, JWT auth, Mercado Pago pa
 | `pnpm build`    | Compile TS to `dist/` (CI build gate)|
 | `pnpm start`    | Run `dist/app.js`                    |
 | `pnpm install`  | Install (use `--frozen-lockfile` in CI) |
+| `pnpm test`     | Placeholder (`echo`, pasa siempre hasta que BE-3 agregue tests reales) |
+| `pnpm test:coverage` | Vitest + coverage total ≥80% (gate de `main`, hoy falla: 0 tests) |
 
-- No `test` script exists — CI runs `pnpm run test --if-present` (no-op today). No lint/format config.
+- Vitest 4 + `@vitest/coverage-v8`, config en `vitest.config.ts`
+  (thresholds 80 en lines/functions/branches/statements; solo se evalúan
+  con `--coverage`, o sea en `pnpm test:coverage`).
 - Verification step = `pnpm build` (strict TS). Run it before committing.
 
 ## Hard requirements / gotchas
@@ -43,8 +47,8 @@ Required in `.env` (see `.env.example`): `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_US
 
 ## CI/CD
 
-- `.github/workflows/ci.yml`: on push to `develop`/`main` and PRs — `pnpm build` + MySQL-backed test job.
-- `.github/workflows/deploy.yml`: on successful CI on `main`, deploy via buildpack (Railway/Render, no Docker). Secrets: `DB_*`, `JWT_*`, `MERCADOPAGO_ACCESS_TOKEN`, `URL_*`.
+- `.github/workflows/ci.yml`: on push to `develop`/`main` and PRs — `pnpm build` + MySQL-backed test job. Job `Coverage` (solo PRs/pushes a `main`): `pnpm test:coverage` con thresholds ≥80.
+- `.github/workflows/deploy.yml`: on successful CI on `main`, deploy via buildpack (Railway/Render, no Docker). Antes verifica el Quality Gate de SonarCloud vía API (aborta si no es OK) y requiere `RAILWAY_TOKEN`. Secrets: `SONAR_TOKEN`, `DB_*`, `JWT_*`, `MERCADOPAGO_ACCESS_TOKEN`, `URL_*`.
 - **Branch protection**: merge a `develop` se bloquea si fallan los tests. Merge a `main` exige además cobertura ≥80% (vitest) y Quality Gate de SonarCloud verde.
 - SonarCloud (`SonarQubeCloud` GitHub App) runs analysis on every push/PR; the Quality Gate must pass for merges into `main` (not blocking `develop`).
 - Tests use Vitest + supertest; check `package.json` scripts (`test`) and `vitest.config` for coverage thresholds.
