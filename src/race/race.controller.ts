@@ -29,9 +29,9 @@ async function getCurrentByCombination(req: Request, res: Response) {
     }
 
     const em = orm.em;
-    const limitPrev = Number.parseInt(previousLimit) || 5;
-    const limitNext = Number.parseInt(nextLimit) || 5;
-    const idCombination = Number.parseInt(combination);
+    const limitPrev = Number.parseInt(previousLimit as string) || 5;
+    const limitNext = Number.parseInt(nextLimit as string) || 5;
+    const idCombination = Number.parseInt(combination as string);
     const currentDate = new Date();
 
     const [previousRaces, nextRaces] = await Promise.all([
@@ -87,7 +87,7 @@ async function getOne(req: Request, res: Response) {
     }
 
     const em = orm.em;
-    const id = Number.parseInt(req.params.id);
+    const id = Number.parseInt(req.params.id as string);
     const race = await em.findOneOrFail(
       Race,
       { id },
@@ -145,7 +145,7 @@ async function update(req: Request, res: Response) {
     }
 
     const em = orm.em;
-    const id = Number.parseInt(req.params.id);
+    const id = Number.parseInt(req.params.id as string);
     const race = await em.findOneOrFail(Race, { id });
 
     if (req.body.sanitizeInput?.combination) {
@@ -201,7 +201,7 @@ async function remove(req: Request, res: Response) {
     }
 
     const em = orm.em;
-    const id = Number.parseInt(req.params.id);
+    const id = Number.parseInt(req.params.id as string);
     const race = await em.findOneOrFail(Race, { id });
     await em.removeAndFlush(race);
     res.status(200).json({ message: 'Race deleted', data: race });

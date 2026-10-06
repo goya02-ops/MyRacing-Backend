@@ -39,7 +39,7 @@ async function getOne(req: Request, res: Response) {
     }
 
     const em = orm.em;
-    const id = Number.parseInt(req.params.id);
+    const id = Number.parseInt(req.params.id as string);
     const user = await em.findOneOrFail(User, { id });
     res.status(200).json({ message: 'User found', data: user });
   } catch (error) {
@@ -99,7 +99,7 @@ async function update(req: Request, res: Response) {
     }
 
     const em = orm.em;
-    const id = Number.parseInt(req.params.id);
+    const id = Number.parseInt(req.params.id as string);
     const user = await em.findOneOrFail(User, { id });
 
     if (req.body.sanitizeInput?.email && !isValidEmail(req.body.sanitizeInput.email)) {
@@ -123,7 +123,7 @@ async function remove(req: Request, res: Response) {
     }
 
     const em = orm.em;
-    const id = Number.parseInt(req.params.id);
+    const id = Number.parseInt(req.params.id as string);
     const user = await em.findOneOrFail(User, { id });
     await em.removeAndFlush(user);
     res.status(200).json({ message: 'User deleted', data: user });

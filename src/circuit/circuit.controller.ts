@@ -36,7 +36,7 @@ async function findAll(req: Request, res: Response) {
 async function findOne(req: Request, res: Response) {
   try {
     const em = orm.em;
-    const id = Number.parseInt(req.params.id);
+    const id = Number.parseInt(req.params.id as string);
     const circuit = await em.findOneOrFail(
       Circuit,
       { id },
@@ -62,7 +62,7 @@ async function add(req: Request, res: Response) {
 async function update(req: Request, res: Response) {
   try {
     const em = orm.em;
-    const id = Number.parseInt(req.params.id);
+    const id = Number.parseInt(req.params.id as string);
     const circuit = await em.findOneOrFail(Circuit, { id });
     em.assign(circuit, req.body.sanitizeInput);
     await em.flush();
@@ -75,7 +75,7 @@ async function update(req: Request, res: Response) {
 async function remove(req: Request, res: Response) {
   try {
     const em = orm.em;
-    const id = Number.parseInt(req.params.id);
+    const id = Number.parseInt(req.params.id as string);
     const circuit = await em.findOneOrFail(Circuit, { id });
     await em.removeAndFlush(circuit);
     res.status(200).json({ message: 'Circuit class deleted', data: circuit });
