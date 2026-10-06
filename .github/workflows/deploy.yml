@@ -10,15 +10,39 @@ jobs:
   deploy:
     name: Deploy backend
     runs-on: ubuntu-latest
+    # Gate automático de producción (sin aprobación humana):
+    # 1. Este workflow solo corre si el CI completo pasó en main
+    #    (Build, Tests y Coverage total ≥80%).
+    # 2. El paso "SonarCloud Quality Gate" aborta si el QG del proyecto no es OK.
+    # Si algo falla, NO hay deploy a producción.
     if: github.event.workflow_run.conclusion == 'success'
     environment: production
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      - name: Deploy checklist
+      - name: SonarCloud Quality Gate (bloquea el deploy si falla)
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          echo "El CI pasó: este job solo corre si los tests y el build del backend terminaron con éxito."
-          echo "PLATAFORMA: Railway/Render con buildpack (sin Docker)."
-          echo "CREDENCIALES: definir como secrets del repo las variables del backend:"
-          echo "  DB_*, JWT_SECRET, JWT_REFRESH_SECRET, MERCADOPAGO_ACCESS_TOKEN, URL_*"
-          echo "Deploy manual inicial pendiente: configurar el servicio conectado a este repo (placeholder)."
+          if [ -z "$SONAR_TOKEN" ]; then
+            echo "Falta el secret SONAR_TOKEN: no se puede verificar el Quality Gate, deploy abortado."
+            exit 1
+          fi
+          status=$(curl -s -u "$SONAR_TOKEN:" "https://sonarcloud.io/api/qualitygates/project_status?projectKey=goya02-ops_MyRacing-Backend" | jq -r '.projectStatus.status')
+          echo "Quality Gate: $status"
+          if [ "$status" != "OK" ]; then
+            echo "Quality Gate NO OK: deploy a producción abortado."
+            exit 1
+          fi
+
+      - name: Deploy a producción (Railway)
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          if [ -z "$RAILWAY_TOKEN" ]; then
+            echo "Railway no configurado (falta el secret RAILWAY_TOKEN): deploy abortado."
+            echo "Ver docs/deploy.md para crear el servicio y el token."
+            exit 1
+          fi
+          npm install -g --ignore-scripts @railway/cli@5.63.4
+          railway up --service "${{ vars.RAILWAY_SERVICE }}" --detach
