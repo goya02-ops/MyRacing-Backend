@@ -45,6 +45,7 @@ Required in `.env` (see `.env.example`): `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_US
 
 - `.github/workflows/ci.yml`: on push to `develop`/`main` and PRs — `pnpm build` + MySQL-backed test job.
 - `.github/workflows/deploy.yml`: on successful CI on `main`, deploy via buildpack (Railway/Render, no Docker). Secrets: `DB_*`, `JWT_*`, `MERCADOPAGO_ACCESS_TOKEN`, `URL_*`.
+- **Branch protection**: merge a `develop` se bloquea si fallan los tests. Merge a `main` exige además cobertura ≥80% (vitest) y Quality Gate de SonarCloud verde.
 - SonarCloud (`SonarQubeCloud` GitHub App) runs analysis on every push/PR; the Quality Gate must pass for merges into `main` (not blocking `develop`).
 - Tests use Vitest + supertest; check `package.json` scripts (`test`) and `vitest.config` for coverage thresholds.
 - TDD: integration tests against the real app (`app.ts` must be exported, see BE-1) before refactoring.
