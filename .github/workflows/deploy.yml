@@ -18,7 +18,7 @@ jobs:
     if: github.event.workflow_run.conclusion == 'success'
     environment: production
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: SonarCloud Quality Gate (bloquea el deploy si falla)
         env:
@@ -28,7 +28,7 @@ jobs:
             echo "Falta el secret SONAR_TOKEN: no se puede verificar el Quality Gate, deploy abortado."
             exit 1
           fi
-          status=$(curl -s -u "$SONAR_TOKEN:" "https://sonarcloud.io/api/qualitygates/project_status?projectKey=goya02-ops_MyRacing-Backend" | python3 -c "import json,sys; print(json.load(sys.stdin)['projectStatus']['status'])")
+          status=$(curl -s -u "$SONAR_TOKEN:" "https://sonarcloud.io/api/qualitygates/project_status?projectKey=goya02-ops_MyRacing-Backend" | jq -r '.projectStatus.status')
           echo "Quality Gate: $status"
           if [ "$status" != "OK" ]; then
             echo "Quality Gate NO OK: deploy a producción abortado."
@@ -44,5 +44,5 @@ jobs:
             echo "Ver docs/deploy.md para crear el servicio y el token."
             exit 1
           fi
-          npm install -g @railway/cli@latest
+          npm install -g --ignore-scripts @railway/cli@5.63.4
           railway up --service "${{ vars.RAILWAY_SERVICE }}" --detach
