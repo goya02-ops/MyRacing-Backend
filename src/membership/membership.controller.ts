@@ -51,7 +51,7 @@ const getCurrentMembership = async (req: Request, res: Response) => {
 async function getOne(req: Request, res: Response) {
   try {
     const em = orm.em;
-    const id = Number.parseInt(req.params.id);
+    const id = Number.parseInt(req.params.id as string);
     const membership = await em.findOneOrFail(Membership, { id });
     res.status(200).json({ message: 'Membership found: ', data: membership });
   } catch (error: any) {
@@ -75,7 +75,7 @@ async function add(req: Request, res: Response) {
 async function update(req: Request, res: Response) {
   try {
     const em = orm.em;
-    const id = Number.parseInt(req.params.id);
+    const id = Number.parseInt(req.params.id as string);
     const membership = await em.findOneOrFail(Membership, { id });
     em.assign(membership, req.body.sanitizeInput);
     await em.flush();
@@ -90,7 +90,7 @@ async function update(req: Request, res: Response) {
 async function remove(req: Request, res: Response) {
   try {
     const em = orm.em;
-    const id = Number.parseInt(req.params.id);
+    const id = Number.parseInt(req.params.id as string);
     const membership = await em.findOneOrFail(Membership, { id });
     await em.removeAndFlush(membership);
     res

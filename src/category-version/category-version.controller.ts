@@ -45,7 +45,7 @@ async function getAll(req: Request, res: Response) {
 async function getOne(req: Request, res: Response) {
   try {
     const em = orm.em;
-    const id = Number.parseInt(req.params.id);
+    const id = Number.parseInt(req.params.id as string);
     const categoryVersion = await em.findOneOrFail(
       CategoryVersion,
       { id },
@@ -81,7 +81,7 @@ async function add(req: Request, res: Response) {
 async function update(req: Request, res: Response) {
   try {
     const em = orm.em;
-    const id = Number.parseInt(req.params.id);
+    const id = Number.parseInt(req.params.id as string);
     const categoryVersion = await em.findOneOrFail(CategoryVersion, { id });
     em.assign(categoryVersion, req.body.sanitizeInput); // Se realizó un cambio para normalizar
     await em.flush();
@@ -102,7 +102,7 @@ async function update(req: Request, res: Response) {
 async function remove(req: Request, res: Response) {
   try {
     const em = orm.em;
-    const id = Number.parseInt(req.params.id);
+    const id = Number.parseInt(req.params.id as string);
     const categoryVersion = await em.findOneOrFail(CategoryVersion, { id });
     await em.removeAndFlush(categoryVersion);
     res

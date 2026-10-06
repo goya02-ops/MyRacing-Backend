@@ -22,7 +22,7 @@ export async function getAll(req: Request, res: Response): Promise<void> {
 
 export async function getOne(req: Request, res: Response): Promise<void> {
   try {
-    const id = Number.parseInt(req.params.id);
+    const id = Number.parseInt(req.params.id as string);
     const data = await getOneRaceUser(id);
     
     if (!data) {
@@ -60,7 +60,7 @@ export async function add(req: Request, res: Response): Promise<void> {
 
 export async function update(req: Request, res: Response): Promise<void> {
   try {
-    const id = Number.parseInt(req.params.id);
+    const id = Number.parseInt(req.params.id as string);
     const input = sanitizeRaceUserInput(req);
     
     const result = await updateRaceUser(id, input);
@@ -78,7 +78,7 @@ export async function update(req: Request, res: Response): Promise<void> {
 
 export async function remove(req: Request, res: Response): Promise<void> {
   try {
-    const id = Number.parseInt(req.params.id);
+    const id = Number.parseInt(req.params.id as string);
     const userPayload = req.user as any;
     const isAdmin = userPayload?.type === 'admin';
     
@@ -121,7 +121,7 @@ export async function getMyRaces(req: Request, res: Response): Promise<void> {
 
 export async function removeSelf(req: Request, res: Response): Promise<void> {
   try {
-    const raceId = Number.parseInt(req.params.raceId);
+    const raceId = Number.parseInt(req.params.raceId as string);
     const userPayload = req.user as any;
     const userId = userPayload?.id;
     
