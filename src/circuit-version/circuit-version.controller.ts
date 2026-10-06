@@ -46,7 +46,7 @@ async function findAll(req: Request, res: Response) {
 async function findOne(req: Request, res: Response) {
   try {
     const em = orm.em;
-    const id = Number.parseInt(req.params.id);
+    const id = Number.parseInt(req.params.id as string);
     const circuitVersion = await em.findOneOrFail(
       CircuitVersion,
       { id },
@@ -84,7 +84,7 @@ async function add(req: Request, res: Response) {
 async function update(req: Request, res: Response) {
   try {
     const em = orm.em;
-    const id = Number.parseInt(req.params.id);
+    const id = Number.parseInt(req.params.id as string);
     const circuitVersion = await em.findOneOrFail(CircuitVersion, { id });
     em.assign(circuitVersion, req.body.sanitizeInput);
     await em.flush();
@@ -107,7 +107,7 @@ async function update(req: Request, res: Response) {
 async function remove(req: Request, res: Response) {
   try {
     const em = orm.em;
-    const id = Number.parseInt(req.params.id);
+    const id = Number.parseInt(req.params.id as string);
     const circuitVersion = em.getReference(CircuitVersion, id);
     await em.removeAndFlush(circuitVersion);
     res

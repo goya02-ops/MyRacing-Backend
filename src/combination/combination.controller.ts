@@ -107,7 +107,7 @@ async function getCurrentRaces(req: Request, res: Response) {
 async function getOne(req: Request, res: Response) {
   try {
     const em = orm.em;
-    const id = Number.parseInt(req.params.id);
+    const id = Number.parseInt(req.params.id as string);
     const combination = await em.findOneOrFail(
       Combination,
       { id },
@@ -190,7 +190,7 @@ async function add(req: Request, res: Response) {
 async function update(req: Request, res: Response) {
   try {
     const em = orm.em;
-    const id = Number.parseInt(req.params.id);
+    const id = Number.parseInt(req.params.id as string);
     const combination = await em.findOneOrFail(Combination, { id }, { populate: ['races'] });
     const oldDateTo = new Date(combination.dateTo);
 
@@ -296,7 +296,7 @@ async function update(req: Request, res: Response) {
 async function remove(req: Request, res: Response) {
   try {
     const em = orm.em;
-    const id = Number.parseInt(req.params.id);
+    const id = Number.parseInt(req.params.id as string);
     const combination = await em.findOneOrFail(Combination, { id });
     await em.removeAndFlush(combination);
     res.status(200).json({ message: 'Combination deleted', data: combination });
