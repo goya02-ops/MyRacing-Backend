@@ -53,3 +53,11 @@ Required in `.env` (see `.env.example`): `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_US
 - SonarCloud (`SonarQubeCloud` GitHub App) runs analysis on every push/PR; the Quality Gate must pass for merges into `main` (not blocking `develop`).
 - Tests use Vitest + supertest; check `package.json` scripts (`test`) and `vitest.config` for coverage thresholds.
 - TDD: integration tests against the real app (`app.ts` must be exported, see BE-1) before refactoring.
+
+## Skills
+
+- Skills instaladas en `.agents/skills/`: `mysql` (queries, índices, N+1),
+  `docker-expert` / `multi-stage-dockerfile`. Cargar solo cuando aplique.
+- Testing con **Vitest** (+ supertest desde BE-2); no usar Jest.
+- Subagentes de referencia en `.opencode/agents/` (programador/tester/juez;
+  flujo TDD en el `AGENTS.md` raíz de DevOps).
