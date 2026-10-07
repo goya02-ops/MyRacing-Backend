@@ -5,9 +5,9 @@
   "description": "",
   "main": "app.js",
   "scripts": {
-    "dev": "tsx watch src/app.ts",
+    "dev": "tsx watch src/server.ts",
     "build": "tsc -p ./tsconfig.json",
-    "start": "node dist/app.js",
+    "start": "node dist/server.js",
     "test": "echo 'No tests yet'",
     "test:coverage": "vitest run --coverage"
   },
@@ -21,7 +21,9 @@
     "@types/express": "5.0.2",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "22.15.29",
+    "@types/supertest": "^7.2.1",
     "@vitest/coverage-v8": "4.1.2",
+    "supertest": "^7.3.1",
     "tsx": "4.19.2",
     "typescript": "^5.9.3",
     "vitest": "4.1.2"

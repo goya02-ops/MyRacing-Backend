@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import express from 'express';
-import { orm, syncSchema } from './shared/orm.js';
+import { orm } from './shared/orm.js';
 import { RequestContext } from '@mikro-orm/mysql';
 
 import { categoryRouter } from './category/category.routes.js';
@@ -18,7 +18,7 @@ import paymentRouter from './payment/payment.routes.js';
 import { errorHandler } from './shared/error-handler.middleware.js';
 import cors from 'cors';
 
-const app = express();
+export const app = express();
 app.use(express.json());
 app.use(cors());
 
@@ -44,10 +44,4 @@ app.use(errorHandler);
 app.use((_, res) => {
   res.status(404).json({ message: 'Not Found' });
   return;
-});
-
-await syncSchema(); //never in production
-
-app.listen(3000, () => {
-  console.log('Server is running on port 3000');
 });
