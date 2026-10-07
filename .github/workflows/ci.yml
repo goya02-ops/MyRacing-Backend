@@ -96,3 +96,27 @@ jobs:
 
       - name: Coverage total ≥80% (vitest thresholds)
         run: pnpm test:coverage
+
+  quality-gate:
+    name: Quality Gate (proyecto)
+    runs-on: ubuntu-latest
+    # Gate de producción: exige el Quality Gate del PROYECTO completo
+    # (no solo del código nuevo del PR). Solo corre en PRs a main y pushes a main.
+    if: >-
+      (github.event_name == 'pull_request' && github.base_ref == 'main') ||
+      (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    steps:
+      - name: SonarCloud Quality Gate del proyecto (bloquea el merge si falla)
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          if [ -z "$SONAR_TOKEN" ]; then
+            echo "Falta el secret SONAR_TOKEN: no se puede verificar el Quality Gate."
+            exit 1
+          fi
+          status=$(curl -s -u "$SONAR_TOKEN:" "https://sonarcloud.io/api/qualitygates/project_status?projectKey=goya02-ops_MyRacing-Backend" | jq -r '.projectStatus.status')
+          echo "Quality Gate del proyecto: $status"
+          if [ "$status" != "OK" ]; then
+            echo "Quality Gate NO OK: este cambio no puede mergearse a main."
+            exit 1
+          fi
