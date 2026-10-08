@@ -50,6 +50,7 @@ jobs:
       DB_PASSWORD: MiR@cing_2025!
       JWT_SECRET: ci_secret_for_tests
       JWT_REFRESH_SECRET: ci_refresh_secret_for_tests
+      MERCADOPAGO_ACCESS_TOKEN: ci_mp_token_for_tests 
     steps:
       - uses: actions/checkout@v4
 
