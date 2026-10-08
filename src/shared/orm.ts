@@ -26,7 +26,7 @@ export const orm = await MikroORM.init({
     Simulator,
     User,
   ],
-  dbName: 'myracing',
+  dbName: DB_NAME,
   clientUrl: `mysql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}`,
   highlighter: new SqlHighlighter(),
   debug: false,
