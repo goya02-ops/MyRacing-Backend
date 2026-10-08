@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 
-// BE-3 (caracterización): el CI debe correr tests reales (`pnpm test`,
-// sin `--if-present`) y la config de vitest debe fijar
-// `coverage.thresholds` ≥80. Se aserta sobre los fuentes porque son
+// Caracterización del gate de CI (issue #3): el CI debe correr tests
+// reales (`pnpm test`, sin `--if-present`) y la config de vitest debe
+// fijar `coverage.thresholds` ≥80. Se aserta sobre los fuentes porque son
 // config de CI/build, no testeables importando el módulo (ver AGENTS.md).
 const ciYml = readFileSync(
   new URL('../../.github/workflows/ci.yml', import.meta.url),
@@ -17,7 +17,7 @@ const packageJson = JSON.parse(
   readFileSync(new URL('../../package.json', import.meta.url), 'utf-8'),
 ) as { scripts?: Record<string, string> };
 
-describe('CI gate (BE-3)', () => {
+describe('CI gate', () => {
   it('el job Tests corre `pnpm test` sin `--if-present`', () => {
     expect(ciYml).toMatch(/run:\s*pnpm test\s*$/m);
     expect(ciYml).not.toContain('--if-present');
