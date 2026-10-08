@@ -10,7 +10,7 @@ Express 5 + TypeScript REST API, MikroORM 6 + MySQL 8, JWT auth, Mercado Pago pa
 | `pnpm build`    | Compile TS to `dist/` (CI build gate)|
 | `pnpm start`    | Run `dist/app.js`                    |
 | `pnpm install`  | Install (use `--frozen-lockfile` in CI) |
-| `pnpm test`     | Placeholder (`echo`, pasa siempre hasta que BE-3 agregue tests reales) |
+| `pnpm test`     | Vitest suite (`vitest run`, gate de CI) |
 | `pnpm test:coverage` | Vitest + coverage total ≥80% (gate de `main`, hoy falla: 0 tests) |
 
 - Vitest 4 + `@vitest/coverage-v8`, config en `vitest.config.ts`
