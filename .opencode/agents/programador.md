@@ -13,7 +13,9 @@ Reglas:
 - Escribi el codigo MINIMO para que el test pase (verde). Sin gold-plating,
   sin features fuera del issue.
 - Despues refactoriza con los tests cuidandote y re-verifica (`pnpm build`
-  + tests afectados).
+  + tests afectados). El refactor incluye simplificar lo dificil de leer
+  aunque funcione (standard: un companero lo entiende en frio). Si excede
+  el scope del issue, reportalo al orquestador en vez de expandir el cambio.
 - Respeta el `AGENTS.md` del repo: imports ESM con extension `.js`,
   entidades `*.entity.ts`, EM via `RequestContext` (no crear EM nuevos),
   errores por `error-handler.middleware.ts`, `reflect-metadata` primero
