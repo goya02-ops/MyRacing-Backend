@@ -21,7 +21,7 @@ Express 5 + TypeScript REST API, MikroORM 6 + MySQL 8, JWT auth, Mercado Pago pa
 ## Hard requirements / gotchas
 
 - **ESM imports need `.js` extensions**: `import { User } from '../user/user.entity.js'` (even though files are `.ts`).
-- **Entities must be named `*.entity.ts`** — `src/shared/orm.ts` globs `./src/**/*.entity.ts` / `./dist/**/*.entity.js`. Other filenames won't be registered.
+- **Entities must be named `*.entity.ts`** and imported explicitly in `src/shared/orm.ts` (no globs since the Vitest 4 fix) — a new entity file that isn't added to the `entities` array won't be registered.
 - `src/shared/orm.ts` connects at import time (top-level await) and hardcodes dbName `myracing` — importing it requires a reachable MySQL.
 - **`src/app.ts` calls `syncSchema()` on startup**: schema is auto-created/updated, there are no migrations. Never run `pnpm dev`/`start` against a production DB.
 - All requests run inside `RequestContext.create(orm.em, next)` (middleware in `app.ts`). Controllers should use `orm.em` (the context fork), call `em.flush()`, and import `RequestContext`-scoped EM rather than creating new ones.
