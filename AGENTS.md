@@ -1,6 +1,6 @@
 # AGENTS.md - MyRacing Backend
 
-Express 5 + TypeScript REST API, MikroORM 6 + MySQL 8, JWT auth, Mercado Pago payments. ESM (`"type": "module"`), pnpm 10. Node 20+.
+Express 5 + TypeScript REST API, MikroORM 6 + MySQL 8, JWT auth, Mercado Pago payments. ESM (`"type": "module"`), pnpm 12. Node 22.
 
 ## Commands
 
@@ -8,10 +8,10 @@ Express 5 + TypeScript REST API, MikroORM 6 + MySQL 8, JWT auth, Mercado Pago pa
 | --------------- | ------------------------------------ |
 | `pnpm dev`      | Dev server with tsx hot reload       |
 | `pnpm build`    | Compile TS to `dist/` (CI build gate)|
-| `pnpm start`    | Run `dist/app.js`                    |
+| `pnpm start`    | Run `dist/server.js` (`src/server.ts` monta `src/app.ts`) |
 | `pnpm install`  | Install (use `--frozen-lockfile` in CI) |
 | `pnpm test`     | Vitest suite (`vitest run`, gate de CI) |
-| `pnpm test:coverage` | Vitest + coverage total ≥80% (gate de `main`, hoy falla: 0 tests) |
+| `pnpm test:coverage` | Vitest + coverage total ≥80% (gate de `main`, aún bajo el umbral) |
 
 - Vitest 4 + `@vitest/coverage-v8`, config en `vitest.config.ts`
   (thresholds 80 en lines/functions/branches/statements; solo se evalúan
@@ -33,7 +33,8 @@ Express 5 + TypeScript REST API, MikroORM 6 + MySQL 8, JWT auth, Mercado Pago pa
 
 Required in `.env` (see `.env.example`): `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `JWT_SECRET`, `JWT_REFRESH_SECRET`, `MERCADOPAGO_ACCESS_TOKEN`, `URL_FRONTEND`, `URL_BACKEND`, `URL_WEBHOOK_MP`, plus `BREVO_API_KEY`/`FROM_EMAIL` for email.
 
-- Local dev MySQL via `docker compose -f ../compose.dev.yaml up -d` (from parent `MyRacing-DevOps/`) exposes port **3307**; CI uses **3306** with service container. Don't mix them up.
+- Local dev MySQL via `docker compose -f ../compose.dev.yaml up -d` (from parent `MyRacing-DevOps/`) exposes port **3307**; CI usa **3306** con MySQL efímera vía step `docker run` (no `services:` — GitHub prohíbe `secrets` ahí). Don't mix them up.
+- El job de CI consume los secrets `DB_PASSWORD` y `MYSQL_ROOT_PASSWORD` (crear en Settings → Secrets → Actions del repo); en `run:` solo `$VAR`, nunca `${{ secrets.* }}` (Sonar S7636).
 - Dev DB user: `admin` / `MiR@cing_2025!` (from compose file / `.env.example`).
 
 ## Structure
