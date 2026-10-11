@@ -254,8 +254,11 @@ export async function handleWebhook(
     return { processed: false };
   }
 
-  // Validar firma HMAC
-  if (!validateMpSignature(rawBody, signature)) {
+  const signableBody = { ...rawBody };
+  delete signableBody['x-mp-signature'];
+
+  // Validar firma HMAC (sobre el body SIN la firma, que solo la transporta)
+  if (!validateMpSignature(signableBody, signature)) {
     logger.warn('Webhook rejected', { reason: 'invalid_signature' });
     return { processed: false };
   }

@@ -47,7 +47,16 @@ export function unlockPayment(key: string): void {
  * Valida la firma HMAC del webhook de MercadoPago.
  * Utiliza el access token como clave secreta.
  *
- * @param body - Body raw del request
+ * Contrato: la firma es el HMAC-SHA256 hex de `JSON.stringify(body)` con
+ * el access token como key, calculado sobre el body SIN el campo
+ * `x-mp-signature` (ese campo solo transporta la firma; si se incluyera,
+ * el HMAC esperado contendría la propia firma y ningún emisor externo
+ * podría validarlo jamás). Por defensa, si el body trae ese campo se
+ * excluye antes de calcular. Una firma malformada (longitud distinta,
+ * no-string, vacía) retorna false en vez de lanzar.
+ *
+ * @param body - Body raw del request (sin `x-mp-signature`, o con él:
+ *   se excluye defensivamente)
  * @param signature - Firma enviada en el header x-mp-signature
  * @returns true si la firma es válida
  */
@@ -56,12 +65,39 @@ export function validateMpSignature(body: unknown, signature: string): boolean {
     return false;
   }
 
+  if (typeof signature !== 'string' || signature.length === 0) {
+    return false;
+  }
+
+  // Exclusión defensiva: la firma viaja en el body y no forma parte
+  // del payload firmado (ver contrato arriba).
+  const signable =
+    body !== null &&
+    typeof body === 'object' &&
+    !Array.isArray(body) &&
+    'x-mp-signature' in (body as Record<string, unknown>)
+      ? (() => {
+          const copy = { ...(body as Record<string, unknown>) };
+          delete copy['x-mp-signature'];
+          return copy;
+        })()
+      : body;
+
   const expected = crypto
     .createHmac('sha256', MERCADOPAGO_ACCESS_TOKEN)
-    .update(JSON.stringify(body))
+    .update(JSON.stringify(signable))
     .digest('hex');
 
-  return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
+  const a = Buffer.from(signature);
+  const b = Buffer.from(expected);
+
+  // timingSafeEqual lanza si difieren longitudes → rechazo limpio (false)
+  // en vez de escalar a 500 en el handler del webhook.
+  if (a.length !== b.length) {
+    return false;
+  }
+
+  return crypto.timingSafeEqual(a, b);
 }
 
 /**
