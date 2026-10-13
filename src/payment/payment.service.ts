@@ -245,7 +245,7 @@ export async function handleWebhook(
 ): Promise<{ processed: boolean }> {
   const rawBody = body as Record<string, unknown>;
 
-  // Extraer firma del header
+  // Extraer firma del campo x-mp-signature del body
   const signature = rawBody['x-mp-signature'] as string | undefined;
 
   // Validar que existe firma
@@ -254,7 +254,8 @@ export async function handleWebhook(
     return { processed: false };
   }
 
-  // Validar firma HMAC
+  // Validar firma HMAC (validateMpSignature excluye x-mp-signature del
+  // cálculo: ese campo solo transporta la firma, no forma parte del payload)
   if (!validateMpSignature(rawBody, signature)) {
     logger.warn('Webhook rejected', { reason: 'invalid_signature' });
     return { processed: false };
@@ -283,7 +284,7 @@ export async function handleWebhook(
       return { processed: false };
     }
 
-    // Activar premium si el pago foi aprovado
+    // Activar premium si el pago fue aprobado
     if (payment.status === 'approved') {
       await activatePremiumUser(userId);
       logger.info('User activated via webhook', { userId, paymentId });
