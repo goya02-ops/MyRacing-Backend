@@ -284,7 +284,7 @@ export async function handleWebhook(
       return { processed: false };
     }
 
-    // Activar premium si el pago foi aprovado
+    // Activar premium si el pago fue aprobado
     if (payment.status === 'approved') {
       await activatePremiumUser(userId);
       logger.info('User activated via webhook', { userId, paymentId });
