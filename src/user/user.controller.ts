@@ -1,7 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
+import type { AuthenticatedRequest } from '../auth/auth.middleware.js';
 import { User } from './user.entity.js';
 import { orm } from '../shared/orm.js';
-import { validateIdParam, validateRequired, validateIsString, isValidEmail } from '../utils/validations.js';
+import { validateIdParam, validateRequired, isValidEmail } from '../utils/validations.js';
 import { handleControllerError } from '../shared/error.util.js';
 
 function sanitizeUserInput(req: Request, res: Response, next: NextFunction) {
@@ -49,7 +50,7 @@ async function getOne(req: Request, res: Response) {
 
 async function add(req: Request, res: Response) {
   try {
-    const { userName, realName, email, password, type } = req.body;
+    const { userName, email, password } = req.body;
 
     const validationError = validateRequired(req.body, ['userName', 'realName', 'email', 'password']);
     if (validationError) {
@@ -132,13 +133,14 @@ async function remove(req: Request, res: Response) {
   }
 }
 
-async function getMe(req: Request, res: Response) {
+async function getMe(req: AuthenticatedRequest, res: Response) {
   try {
     const em = orm.em;
     const userId = req.user?.id;
     
     const user = await em.findOneOrFail(User, { id: userId });
-    const { password: _, ...userWithoutPassword } = user;
+    const userWithoutPassword: Record<string, unknown> = { ...user };
+    delete userWithoutPassword.password;
     
     res.status(200).json({ message: 'Usuario encontrado', data: userWithoutPassword });
   } catch (error) {
@@ -146,7 +148,7 @@ async function getMe(req: Request, res: Response) {
   }
 }
 
-async function updateMe(req: Request, res: Response) {
+async function updateMe(req: AuthenticatedRequest, res: Response) {
   try {
     const em = orm.em;
     const userId = req.user?.id;
@@ -158,12 +160,14 @@ async function updateMe(req: Request, res: Response) {
       return;
     }
     
-    const { type, ...sanitizedInput } = req.body.sanitizeInput;
+    const sanitizedInput = { ...req.body.sanitizeInput };
+    delete sanitizedInput.type;
     
     em.assign(user, sanitizedInput);
     await em.flush();
     
-    const { password: _, ...userWithoutPassword } = user;
+    const userWithoutPassword: Record<string, unknown> = { ...user };
+    delete userWithoutPassword.password;
     res.status(200).json({ message: 'Perfil actualizado', data: userWithoutPassword });
   } catch (error) {
     handleControllerError(error, res);

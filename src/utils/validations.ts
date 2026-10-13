@@ -12,19 +12,22 @@ export function validateRequired(body: Record<string, unknown>, fields: string[]
   return null;
 }
 
-export function validateIdParam(id: any): boolean {
-  const parsed = Number.parseInt(id);
+export function validateIdParam(id: unknown): boolean {
+  if (typeof id !== 'string' && typeof id !== 'number') {
+    return false;
+  }
+  const parsed = Number.parseInt(String(id));
   return !isNaN(parsed) && parsed > 0;
 }
 
-export function validateIsString(value: any, fieldName: string): string | null {
+export function validateIsString(value: unknown, fieldName: string): string | null {
   if (typeof value !== 'string' || value.trim() === '') {
     return `${fieldName} debe ser una cadena no vacía`;
   }
   return null;
 }
 
-export function validateIsNumber(value: any, fieldName: string): string | null {
+export function validateIsNumber(value: unknown, fieldName: string): string | null {
   if (typeof value !== 'number' || isNaN(value)) {
     return `${fieldName} debe ser un número válido`;
   }
