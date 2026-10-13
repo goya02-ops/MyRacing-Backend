@@ -76,7 +76,8 @@ export const AuthService = {
     const accessToken = TokenService.generateAccessToken(user);
     const refreshToken = TokenService.generateRefreshToken(user);
 
-    const { password: _, ...userWithoutPassword } = user;
+    const userWithoutPassword = { ...user } as Record<string, unknown>;
+    delete userWithoutPassword.password;
 
     return {
       success: true,
@@ -116,7 +117,8 @@ export const AuthService = {
 
     logger.info('User logged in', { userId: user.id });
 
-    const { password: _, ...userWithoutPassword } = user;
+    const userWithoutPassword = { ...user } as Record<string, unknown>;
+    delete userWithoutPassword.password;
 
     return {
       success: true,
