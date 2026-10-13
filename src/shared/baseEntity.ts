@@ -1,4 +1,4 @@
-import { PrimaryKey, Property, DateTimeType } from '@mikro-orm/mysql';
+import { PrimaryKey } from '@mikro-orm/mysql';
 
 export abstract class BaseEntity {
   // NOTE: tsx no preserva los metadatos de reflection de decorators como tsc,
