@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import type { FilterQuery } from '@mikro-orm/core';
+import type { FilterQuery } from '@mikro-orm/mysql';
 import { Combination } from './combination.entity.js';
 import { Race } from '../race/race.entity.js';
 import { validateSameSimulator, validateDate } from './combination.logic.js';
