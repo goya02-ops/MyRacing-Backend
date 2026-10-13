@@ -37,8 +37,8 @@ async function getAll(req: Request, res: Response) {
     res
       .status(200)
       .json({ message: 'Find all Categories Version', data: categoryVersions });
-  } catch (error: any) {
-    res.status(500).json({ data: error.message });
+  } catch (error) {
+    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
   }
 }
 
@@ -54,8 +54,8 @@ async function getOne(req: Request, res: Response) {
     res
       .status(200)
       .json({ message: 'Category Version found', data: categoryVersion });
-  } catch (error: any) {
-    res.status(500).json({ data: error.message });
+  } catch (error) {
+    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
   }
 }
 
@@ -73,8 +73,8 @@ async function add(req: Request, res: Response) {
       message: 'Category Version created',
       data: populatedCategoryVersion,
     });
-  } catch (error: any) {
-    res.status(500).json({ data: error.message });
+  } catch (error) {
+    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
   }
 }
 
@@ -94,8 +94,8 @@ async function update(req: Request, res: Response) {
       message: 'Category Version updated',
       data: populatedCategoryVersion,
     });
-  } catch (error: any) {
-    res.status(500).json({ data: error.message });
+  } catch (error) {
+    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
   }
 }
 
@@ -108,8 +108,8 @@ async function remove(req: Request, res: Response) {
     res
       .status(200)
       .json({ message: 'Category Version deleted', data: categoryVersion });
-  } catch (error: any) {
-    res.status(500).json({ data: error.message });
+  } catch (error) {
+    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
   }
 }
 

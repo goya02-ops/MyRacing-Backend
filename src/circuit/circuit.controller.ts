@@ -28,8 +28,8 @@ async function findAll(req: Request, res: Response) {
     res
       .status(200)
       .json({ message: 'Find all circuits classes', data: circuits });
-  } catch (error: any) {
-    res.status(500).json({ data: error.message });
+  } catch (error) {
+    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
   }
 }
 
@@ -43,8 +43,8 @@ async function findOne(req: Request, res: Response) {
       { populate: ['circuitVersions'] }
     );
     res.status(200).json({ message: 'Circuit found: ', data: circuit });
-  } catch (error: any) {
-    res.status(500).json({ data: error.message });
+  } catch (error) {
+    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
   }
 }
 
@@ -54,8 +54,8 @@ async function add(req: Request, res: Response) {
     const circuit = em.create(Circuit, req.body);
     await em.flush();
     res.status(201).json({ message: 'Circuit class created', data: circuit });
-  } catch (error: any) {
-    res.status(500).json({ data: error.message });
+  } catch (error) {
+    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
   }
 }
 
@@ -67,8 +67,8 @@ async function update(req: Request, res: Response) {
     em.assign(circuit, req.body.sanitizeInput);
     await em.flush();
     res.status(200).json({ message: 'Circuit class updated', data: circuit });
-  } catch (error: any) {
-    res.status(500).json({ data: error.message });
+  } catch (error) {
+    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
   }
 }
 
@@ -79,8 +79,8 @@ async function remove(req: Request, res: Response) {
     const circuit = await em.findOneOrFail(Circuit, { id });
     await em.removeAndFlush(circuit);
     res.status(200).json({ message: 'Circuit class deleted', data: circuit });
-  } catch (error: any) {
-    res.status(500).json({ data: error.message });
+  } catch (error) {
+    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
   }
 }
 

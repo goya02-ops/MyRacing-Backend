@@ -18,7 +18,6 @@ import {
   generateIdempotencyKey,
   lockPayment,
   unlockPayment,
-  sanitizePaymentInput,
   validateMpSignature,
 } from './payment.utils.js';
 

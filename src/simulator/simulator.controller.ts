@@ -27,8 +27,8 @@ async function findAll(req: Request, res: Response) {
     res
       .status(200)
       .json({ message: 'Find all categories classes', data: simulators });
-  } catch (error: any) {
-    res.status(500).json({ data: error.message });
+  } catch (error) {
+    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
   }
 }
 
@@ -42,8 +42,8 @@ async function findOne(req: Request, res: Response) {
       { populate: ['circuits.circuit', 'categories.category'] }
     );
     res.status(200).json({ message: 'Simulator found: ', data: simulator });
-  } catch (error: any) {
-    res.status(500).json({ data: error.message });
+  } catch (error) {
+    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
   }
 }
 
@@ -53,8 +53,8 @@ async function add(req: Request, res: Response) {
     const simulator = em.create(Simulator, req.body);
     await em.flush();
     res.status(201).json({ message: 'Simulator created', data: simulator });
-  } catch (error: any) {
-    res.status(500).json({ data: error.message });
+  } catch (error) {
+    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
   }
 }
 
@@ -66,8 +66,8 @@ async function update(req: Request, res: Response) {
     em.assign(simulator, req.body.sanitizeInput);
     await em.flush();
     res.status(200).json({ message: 'Simulator updated', data: simulator });
-  } catch (error: any) {
-    res.status(500).json({ data: error.message });
+  } catch (error) {
+    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
   }
 }
 async function remove(req: Request, res: Response) {
@@ -77,8 +77,8 @@ async function remove(req: Request, res: Response) {
     const simulator = await em.findOneOrFail(Simulator, { id });
     await em.removeAndFlush(simulator);
     res.status(200).json({ message: 'Simulator deleted', data: simulator });
-  } catch (error: any) {
-    res.status(500).json({ data: error.message });
+  } catch (error) {
+    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
   }
 }
 

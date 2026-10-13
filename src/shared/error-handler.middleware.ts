@@ -7,6 +7,9 @@ export function errorHandler(
   res: Response,
   _next: NextFunction
 ): void {
+  // Express detecta los middlewares de error por su firma de 4 parámetros;
+  // la respuesta es terminal y no se delega al siguiente middleware.
+  void _next;
   logger.error('Unhandled error', err, {
     url: _req.originalUrl,
     method: _req.method,

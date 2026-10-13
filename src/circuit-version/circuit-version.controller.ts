@@ -38,8 +38,8 @@ async function findAll(req: Request, res: Response) {
       message: 'Find all circuit_versions classes',
       data: circuitVersions,
     });
-  } catch (error: any) {
-    res.status(500).json({ data: error.message });
+  } catch (error) {
+    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
   }
 }
 
@@ -57,8 +57,8 @@ async function findOne(req: Request, res: Response) {
     res
       .status(200)
       .json({ message: 'Circuit_Version found: ', data: circuitVersion });
-  } catch (error: any) {
-    res.status(500).json({ data: error.message });
+  } catch (error) {
+    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
   }
 }
 
@@ -76,8 +76,8 @@ async function add(req: Request, res: Response) {
       message: 'CircuitVersion class created',
       data: populatedCircuitVersion,
     });
-  } catch (error: any) {
-    res.status(500).json({ data: error.message });
+  } catch (error) {
+    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
   }
 }
 
@@ -99,8 +99,8 @@ async function update(req: Request, res: Response) {
         message: 'Circuit_Version updated',
         data: populatedCircuitVersion,
       });
-  } catch (error: any) {
-    res.status(500).json({ data: error.message });
+  } catch (error) {
+    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
   }
 }
 
@@ -113,8 +113,8 @@ async function remove(req: Request, res: Response) {
     res
       .status(200)
       .json({ message: 'CircuitVersion class deleted', data: circuitVersion });
-  } catch (error: any) {
-    res.status(500).json({ data: error.message });
+  } catch (error) {
+    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
   }
 }
 

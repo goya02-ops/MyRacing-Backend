@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p ./tsconfig.json",
+    "lint": "eslint . --max-warnings 0",
     "start": "node dist/server.js",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage"
@@ -16,6 +17,7 @@
   "license": "ISC",
   "packageManager": "pnpm@12.11.2+sha512.25a51652a196785af5f28bda6dfe8dc582ebefa4ac1d180221ce1390231c5fb76637822ea4b6e4633ce74acdcb0a77f725af11bad38177fdeddaee818a955cb9",
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/bcrypt": "^6.0.0",
     "@types/cors": "^2.8.19",
     "@types/express": "5.0.2",
@@ -23,9 +25,11 @@
     "@types/node": "22.15.29",
     "@types/supertest": "^7.2.1",
     "@vitest/coverage-v8": "4.1.2",
+    "eslint": "^10.12.0",
     "supertest": "^7.3.1",
     "tsx": "4.19.2",
     "typescript": "^5.9.3",
+    "typescript-eslint": "^8.71.1",
     "vitest": "4.1.2"
   },
   "dependencies": {

@@ -1,5 +1,6 @@
 
 import type { Request, Response } from 'express';
+import type { AuthenticatedRequest } from '../auth/auth.middleware.js';
 import { handleControllerError } from '../shared/error.util.js';
 import {
   addRaceUser,
@@ -76,13 +77,18 @@ export async function update(req: Request, res: Response): Promise<void> {
   }
 }
 
-export async function remove(req: Request, res: Response): Promise<void> {
+export async function remove(req: AuthenticatedRequest, res: Response): Promise<void> {
   try {
     const id = Number.parseInt(req.params.id as string);
-    const userPayload = req.user as any;
+    const userPayload = req.user;
     const isAdmin = userPayload?.type === 'admin';
-    
-    const result = await removeRaceUser(id, userPayload?.id, isAdmin);
+
+    if (userPayload?.id === undefined) {
+      res.status(401).json({ message: 'Usuario no autenticado' });
+      return;
+    }
+
+    const result = await removeRaceUser(id, userPayload.id, isAdmin);
     
     if (!result.success) {
       if (result.error === 'RaceUser not found') {
@@ -109,21 +115,31 @@ export async function getByUser(req: Request, res: Response): Promise<void> {
   }
 }
 
-export async function getMyRaces(req: Request, res: Response): Promise<void> {
+export async function getMyRaces(req: AuthenticatedRequest, res: Response): Promise<void> {
   try {
-    const userPayload = req.user as any;
-    const data = await getRaceUsersByUser(userPayload?.id);
+    const userPayload = req.user;
+
+    if (userPayload?.id === undefined) {
+      res.status(401).json({ message: 'Usuario no autenticado' });
+      return;
+    }
+
+    const data = await getRaceUsersByUser(userPayload.id);
     res.status(200).json({ message: 'My races found', data });
   } catch (error) {
     handleControllerError(error, res);
   }
 }
 
-export async function removeSelf(req: Request, res: Response): Promise<void> {
+export async function removeSelf(req: AuthenticatedRequest, res: Response): Promise<void> {
   try {
     const raceId = Number.parseInt(req.params.raceId as string);
-    const userPayload = req.user as any;
-    const userId = userPayload?.id;
+    const userId = req.user?.id;
+
+    if (userId === undefined) {
+      res.status(401).json({ message: 'Usuario no autenticado' });
+      return;
+    }
     
     const myRaces = await getRaceUsersByUser(userId);
     const raceUser = myRaces.find(ru => ru.race.id === raceId);

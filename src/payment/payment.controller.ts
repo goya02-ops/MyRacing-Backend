@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import type { AuthenticatedRequest } from '../auth/auth.middleware.js';
 import { orm } from '../shared/orm.js';
 import { User } from '../user/user.entity.js';
 import { handleControllerError } from '../shared/error.util.js';
@@ -18,7 +19,7 @@ import { sanitizePaymentInput } from './payment.utils.js';
  * Response: preferenceId para el checkout
  */
 export async function createPreferenceHandler(
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response,
 ): Promise<void> {
   try {
@@ -69,7 +70,7 @@ export async function createPreferenceHandler(
  * Response: Estado del pago (approved/rejected/pending)
  */
 export async function processPaymentHandler(
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response,
 ): Promise<void> {
   try {
@@ -147,7 +148,7 @@ export async function processPaymentHandler(
  * Response: Estado actual del pago
  */
 export async function checkPaymentStatusHandler(
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response,
 ): Promise<void> {
   try {

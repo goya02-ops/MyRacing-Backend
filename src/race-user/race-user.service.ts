@@ -116,7 +116,7 @@ function mapToResponse(raceUser: RaceUser): RaceUserResponse {
       id: raceUser.race.id!,
       raceDateTime: raceUser.race.raceDateTime,
       registrationDeadline: raceUser.race.registrationDeadline,
-      combination: raceUser.race.combination as any as number,
+      combination: raceUser.race.combination.id as number,
     },
   };
 }

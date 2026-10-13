@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import type { FilterQuery } from '@mikro-orm/mysql';
 import { Combination } from './combination.entity.js';
 import { Race } from '../race/race.entity.js';
 import { validateSameSimulator, validateDate } from './combination.logic.js';
@@ -74,8 +75,8 @@ async function getAll(req: Request, res: Response) {
     res
       .status(200)
       .json({ message: 'Find all combinations', data: combinations });
-  } catch (error: any) {
-    res.status(500).json({ data: error.message });
+  } catch (error) {
+    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
   }
 }
 
@@ -83,7 +84,7 @@ async function getCurrentRaces(req: Request, res: Response) {
   try {
     const em = orm.em;
     const now = new Date();
-    const filter: any = {
+    const filter: FilterQuery<Combination> = {
       dateFrom: { $lte: now },
       dateTo: { $gte: now },
     };
@@ -99,8 +100,8 @@ async function getCurrentRaces(req: Request, res: Response) {
     res
       .status(200)
       .json({ message: 'Find current combinations', data: combinations });
-  } catch (error: any) {
-    res.status(500).json({ data: error.message });
+  } catch (error) {
+    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
   }
 }
 
@@ -122,8 +123,8 @@ async function getOne(req: Request, res: Response) {
       }
     );
     res.status(200).json({ message: 'Combination found', data: combination });
-  } catch (error: any) {
-    res.status(500).json({ data: error.message });
+  } catch (error) {
+    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
   }
 }
 
@@ -182,8 +183,8 @@ async function add(req: Request, res: Response) {
       message: 'Combination created',
       data: populatedCombination,
     });
-  } catch (error: any) {
-    res.status(500).json({ data: error.message });
+  } catch (error) {
+    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
   }
 }
 
@@ -288,8 +289,8 @@ async function update(req: Request, res: Response) {
     res
       .status(200)
       .json({ message: 'Combination updated', data: populatedCombination });
-  } catch (error: any) {
-    res.status(500).json({ data: error.message });
+  } catch (error) {
+    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
   }
 }
 
@@ -300,8 +301,8 @@ async function remove(req: Request, res: Response) {
     const combination = await em.findOneOrFail(Combination, { id });
     await em.removeAndFlush(combination);
     res.status(200).json({ message: 'Combination deleted', data: combination });
-  } catch (error: any) {
-    res.status(500).json({ data: error.message });
+  } catch (error) {
+    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
   }
 }
 

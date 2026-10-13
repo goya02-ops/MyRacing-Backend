@@ -22,7 +22,9 @@ export function sanitizeRaceUserInput(req: Request): RaceUserAddRequest | RaceUs
 /**
  * Convierte los valores del body a números para el sanitized input.
  */
-export function parseSanitizedInput(input: any): { userId: number; raceId: number } {
+export function parseSanitizedInput(
+  input: RaceUserAddRequest | RaceUserUpdateRequest
+): { userId: number; raceId: number } {
   return {
     userId: Number(input.userId),
     raceId: Number(input.raceId),
