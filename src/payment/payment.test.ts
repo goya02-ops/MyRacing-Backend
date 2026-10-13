@@ -1,8 +1,18 @@
-import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+  vi,
+  beforeAll,
+  afterAll,
+  beforeEach,
+} from 'vitest';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import request from 'supertest';
-
+//***********************************************************
+//SUPLANTACIÓN DE FUNCIONES DE MERCADOPAGO Y UTILS PARA TESTS
+//***********************************************************
 vi.mock('mercadopago', () => {
   const MercadoPagoConfig = vi.fn();
   const Preference = vi.fn();
@@ -18,18 +28,14 @@ vi.mock('mercadopago', () => {
 // determinística. Se fija a una constante para poder pre-bloquearla en el
 // caso 5; el resto de utils se conserva real (importOriginal).
 vi.mock('./payment.utils.js', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('./payment.utils.js')>();
-  return { ...actual, generateIdempotencyKey: () => 'be11-fixed-key' };
+  const actual = await importOriginal<typeof import('./payment.utils.js')>();
+  return { ...actual, generateIdempotencyKey: () => 'fixed-key' };
 });
 
 import { Preference, Payment } from 'mercadopago';
 import { app } from '../app.js';
 import { orm } from '../shared/orm.js';
-import {
-  MERCADOPAGO_ACCESS_TOKEN,
-  JWT_SECRET,
-} from '../shared/config.js';
+import { MERCADOPAGO_ACCESS_TOKEN, JWT_SECRET } from '../shared/config.js';
 import { User, UserType } from '../user/user.entity.js';
 import { Membership } from '../membership/membership.entity.js';
 import {
@@ -39,17 +45,20 @@ import {
   unlockPayment,
 } from './payment.utils.js';
 
+//*************
+//HERRAMIENTAS
+//*************
+// Estos son mocks que sirven para reemplazar los métodos de creación de preferencias y pagos de MercadoPago, así como la obtención de pagos. Se usan para simular respuestas de la API de MercadoPago sin hacer llamadas reales.
 const preferenceCreate = vi.mocked(Preference.prototype.create);
 const paymentCreate = vi.mocked(Payment.prototype.create);
 const paymentGet = vi.mocked(Payment.prototype.get);
 
+//Simular usuario y generar JWT para autenticación en tests
 function signJwt(user: User, type: string): string {
-  return jwt.sign(
-    { id: user.id, userName: user.userName, type },
-    JWT_SECRET,
-  );
+  return jwt.sign({ id: user.id, userName: user.userName, type }, JWT_SECRET);
 }
 
+//Simular la firma HMAC de MercadoPago para los tests de webhook. Se usa el mismo algoritmo y token que la implementación real.
 function mpSignature(body: unknown): string {
   return crypto
     .createHmac('sha256', MERCADOPAGO_ACCESS_TOKEN as string)
@@ -57,10 +66,11 @@ function mpSignature(body: unknown): string {
     .digest('hex');
 }
 
-describe('payment (BE-11)', () => {
+describe('payment', () => {
   let membershipId: number;
   const userIds: number[] = [];
 
+  // Crear usuario común para tests y persistirlo en DB. Se guarda su ID para borrarlo al final.
   async function createCommonUser(tag: string): Promise<User> {
     const em = orm.em.fork();
     const suffix = `${tag}_${Date.now()}_${Math.floor(Math.random() * 1e6)}`;
@@ -81,6 +91,7 @@ describe('payment (BE-11)', () => {
     return await orm.em.fork().findOneOrFail(User, { id });
   }
 
+  // Crear membresía temporal para tests y persistirla en DB. Se guarda su ID para borrarla al final.
   beforeAll(async () => {
     const em = orm.em.fork();
     const membership = em.create(Membership, {
@@ -91,6 +102,7 @@ describe('payment (BE-11)', () => {
     membershipId = membership.id!;
   });
 
+  // Borrar usuarios y membresía de prueba al final de todos los tests
   afterAll(async () => {
     const em = orm.em.fork();
     if (userIds.length > 0) {
@@ -103,9 +115,10 @@ describe('payment (BE-11)', () => {
     }
   });
 
+  // Limpiar mocks y desbloquear pago duplicado antes de cada test. El lock de pago se usa en el caso 5 para simular un pago duplicado.
   beforeEach(() => {
     vi.clearAllMocks();
-    unlockPayment('be11-fixed-key');
+    unlockPayment('fixed-key');
   });
 
   it('1. POST /api/payment/wh-mp con {} → 200 sin auth, sin DB, sin MP', async () => {
@@ -146,6 +159,7 @@ describe('payment (BE-11)', () => {
       id: 111,
       external_reference: String(user.id),
     } as never);
+    //Pago con tarjeta
     const res = await request(app)
       .post('/api/payment/process-payment')
       .set('Authorization', `Bearer ${signJwt(user, 'common')}`)
@@ -164,7 +178,7 @@ describe('payment (BE-11)', () => {
 
   it('5. process-payment duplicado (lock) → 409 Payment already in progress', async () => {
     const user = await createCommonUser('dup');
-    lockPayment('be11-fixed-key');
+    lockPayment('fixed-key');
     try {
       const res = await request(app)
         .post('/api/payment/process-payment')
@@ -174,7 +188,7 @@ describe('payment (BE-11)', () => {
       expect(res.body).toEqual({ message: 'Payment already in progress' });
       expect(paymentCreate).not.toHaveBeenCalled();
     } finally {
-      unlockPayment('be11-fixed-key');
+      unlockPayment('fixed-key');
     }
   });
 
@@ -213,9 +227,9 @@ describe('payment (BE-11)', () => {
     });
 
     it('8b. validateMpSignature: inválida (misma longitud) → false', () => {
-      expect(
-        validateMpSignature({ type: 'payment' }, '0'.repeat(64)),
-      ).toBe(false);
+      expect(validateMpSignature({ type: 'payment' }, '0'.repeat(64))).toBe(
+        false,
+      );
     });
 
     it('8c. validateMpSignature: sin token → false', async () => {

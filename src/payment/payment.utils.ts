@@ -57,7 +57,7 @@ export function unlockPayment(key: string): void {
  *
  * @param body - Body raw del request (sin `x-mp-signature`, o con él:
  *   se excluye defensivamente)
- * @param signature - Firma enviada en el header x-mp-signature
+ * @param signature - Firma recibida en el campo `x-mp-signature` del body
  * @returns true si la firma es válida
  */
 export function validateMpSignature(body: unknown, signature: string): boolean {
