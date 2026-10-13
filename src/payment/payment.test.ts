@@ -93,6 +93,14 @@ describe('payment', () => {
 
   // Crear membresía temporal para tests y persistirla en DB. Se guarda su ID para borrarla al final.
   beforeAll(async () => {
+    // El MySQL de CI es efímero y vacío; syncSchema() solo corre al arrancar
+    // el servidor y los tests importan `app` sin arrancarlo. Sincronizar de
+    // forma NO destructiva (crea lo que falta sin borrar datos): funciona
+    // tanto en CI virgen como en DB local con tablas existentes.
+    const generator = orm.getSchemaGenerator();
+    await generator.ensureDatabase();
+    await generator.updateSchema();
+
     const em = orm.em.fork();
     const membership = em.create(Membership, {
       dateFrom: new Date(),
