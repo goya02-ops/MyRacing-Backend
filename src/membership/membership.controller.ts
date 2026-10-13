@@ -28,8 +28,8 @@ async function getAll(req: Request, res: Response) {
     res
       .status(200)
       .json({ message: 'Find all memberships classes', data: memberships });
-  } catch (error: any) {
-    res.status(500).json({ data: error.message });
+  } catch (error) {
+    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
   }
 }
 const getCurrentMembership = async (req: Request, res: Response) => {
@@ -54,8 +54,8 @@ async function getOne(req: Request, res: Response) {
     const id = Number.parseInt(req.params.id as string);
     const membership = await em.findOneOrFail(Membership, { id });
     res.status(200).json({ message: 'Membership found: ', data: membership });
-  } catch (error: any) {
-    res.status(500).json({ data: error.message });
+  } catch (error) {
+    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
   }
 }
 
@@ -67,8 +67,8 @@ async function add(req: Request, res: Response) {
     res
       .status(201)
       .json({ message: 'Membership class created', data: membership });
-  } catch (error: any) {
-    res.status(500).json({ data: error.message });
+  } catch (error) {
+    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
   }
 }
 
@@ -82,8 +82,8 @@ async function update(req: Request, res: Response) {
     res
       .status(200)
       .json({ message: 'Membership class updated', data: membership });
-  } catch (error: any) {
-    res.status(500).json({ data: error.message });
+  } catch (error) {
+    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
   }
 }
 
@@ -96,8 +96,8 @@ async function remove(req: Request, res: Response) {
     res
       .status(200)
       .json({ message: 'Membership class deleted', data: membership });
-  } catch (error: any) {
-    res.status(500).json({ data: error.message });
+  } catch (error) {
+    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
   }
 }
 
