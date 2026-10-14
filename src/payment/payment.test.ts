@@ -39,7 +39,6 @@ import { MERCADOPAGO_ACCESS_TOKEN, JWT_SECRET } from '../shared/config.js';
 import { User, UserType } from '../user/user.entity.js';
 import { Membership } from '../membership/membership.entity.js';
 import {
-  validateMpSignature,
   sanitizePaymentInput,
   lockPayment,
   unlockPayment,
@@ -58,12 +57,43 @@ function signJwt(user: User, type: string): string {
   return jwt.sign({ id: user.id, userName: user.userName, type }, JWT_SECRET);
 }
 
-//Simular la firma HMAC de MercadoPago para los tests de webhook. Se usa el mismo algoritmo y token que la implementación real.
-function mpSignature(body: unknown): string {
-  return crypto
-    .createHmac('sha256', MERCADOPAGO_ACCESS_TOKEN as string)
-    .update(JSON.stringify(body))
+//Construye la firma OFICIAL de MercadoPago para los tests de webhook:
+//HMAC-SHA256 hex del manifest `id:{dataId};request-id:{xRequestId};ts:{ts};`
+//con el secret, en formato de header `ts=...,v1=...`. Sin tolerancia
+//temporal (el validador no la exige), el ts puede ser fijo y determinístico.
+const WEBHOOK_TEST_TS = '1750000000';
+const WEBHOOK_TEST_REQUEST_ID = 'req-test-123';
+
+function mpOfficialSignature(
+  dataId: string,
+  requestId: string,
+  ts: string,
+  secret: string,
+): string {
+  const manifest = `id:${dataId};request-id:${requestId};ts:${ts};`;
+  const v1 = crypto
+    .createHmac('sha256', secret)
+    .update(manifest)
     .digest('hex');
+  return `ts=${ts},v1=${v1}`;
+}
+
+//Contrato del nuevo validador (a implementar en payment.utils.ts): recibe
+//los valores crudos de headers/query y el secret lo toma de la config.
+//Retorna true si la firma oficial es válida, false en cualquier otro caso.
+type WebhookSignatureInput = {
+  xSignature: string | undefined;
+  xRequestId: string | undefined;
+  dataId: string | undefined;
+};
+
+async function validateWebhookSignature(
+  input: WebhookSignatureInput,
+): Promise<boolean> {
+  const utils = (await import('./payment.utils.js')) as unknown as {
+    validateWebhookSignature: (input: WebhookSignatureInput) => boolean;
+  };
+  return utils.validateWebhookSignature(input);
 }
 
 describe('payment', () => {
@@ -200,9 +230,9 @@ describe('payment', () => {
     }
   });
 
-  it('6. webhook payment con firma HMAC real → 200 y usuario activado', async () => {
+  it('6. webhook payment con firma oficial → 200 y usuario activado', async () => {
     const user = await createCommonUser('wh');
-    const body = { type: 'payment', data: { id: '12345' } };
+    const dataId = '12345';
     paymentGet.mockResolvedValue({
       status: 'approved',
       id: 12345,
@@ -210,7 +240,18 @@ describe('payment', () => {
     } as never);
     const res = await request(app)
       .post('/api/payment/wh-mp')
-      .send({ ...body, 'x-mp-signature': mpSignature(body) });
+      .query({ 'data.id': dataId, type: 'payment' })
+      .set(
+        'x-signature',
+        mpOfficialSignature(
+          dataId,
+          WEBHOOK_TEST_REQUEST_ID,
+          WEBHOOK_TEST_TS,
+          MERCADOPAGO_ACCESS_TOKEN as string,
+        ),
+      )
+      .set('x-request-id', WEBHOOK_TEST_REQUEST_ID)
+      .send({ type: 'payment', data: { id: dataId } });
     expect(res.status).toBe(200);
     expect(paymentGet).toHaveBeenCalledWith({ id: 12345 });
     expect((await freshUser(user.id!)).type).toBe(UserType.PREMIUM);
@@ -229,36 +270,48 @@ describe('payment', () => {
   });
 
   describe('utils puros (sin DB ni MP)', () => {
-    it('8a. validateMpSignature: válida → true', () => {
-      const body = { type: 'payment', data: { id: '1' } };
-      expect(validateMpSignature(body, mpSignature(body))).toBe(true);
-    });
-
-    it('8b. validateMpSignature: inválida (misma longitud) → false', () => {
-      expect(validateMpSignature({ type: 'payment' }, '0'.repeat(64))).toBe(
-        false,
+    it('8a. validador oficial: firma válida con secret correcto → true', async () => {
+      const dataId = '12345';
+      const xSignature = mpOfficialSignature(
+        dataId,
+        WEBHOOK_TEST_REQUEST_ID,
+        WEBHOOK_TEST_TS,
+        MERCADOPAGO_ACCESS_TOKEN as string,
       );
+      await expect(
+        validateWebhookSignature({
+          xSignature,
+          xRequestId: WEBHOOK_TEST_REQUEST_ID,
+          dataId,
+        }),
+      ).resolves.toBe(true);
     });
 
-    it('8c. validateMpSignature: sin token → false', async () => {
-      // Vaciar (no borrar): config re-ejecuta dotenv.config() al reimportar
-      // y dotenv restaura vars borradas desde .env, pero no pisa las que
-      // ya existen (ni siquiera vacías). '' es falsy → rama sin token.
-      const saved = process.env.MERCADOPAGO_ACCESS_TOKEN;
-      process.env.MERCADOPAGO_ACCESS_TOKEN = '';
-      // doUnmock: el import dinámico debe saltear la factoría del mock
-      // parcial (su importOriginal devuelve los utils originales con el
-      // config viejo cacheado) y re-ejecutar utils+config de verdad.
-      vi.doUnmock('./payment.utils.js');
-      vi.resetModules();
-      try {
-        const fresh = await import('./payment.utils.js');
-        expect(fresh.validateMpSignature({ a: 1 }, 'cualquier-firma')).toBe(
-          false,
-        );
-      } finally {
-        process.env.MERCADOPAGO_ACCESS_TOKEN = saved;
-      }
+    it('8b. validador oficial: secret incorrecto → false', async () => {
+      const dataId = '12345';
+      const xSignature = mpOfficialSignature(
+        dataId,
+        WEBHOOK_TEST_REQUEST_ID,
+        WEBHOOK_TEST_TS,
+        'secret-equivocado',
+      );
+      await expect(
+        validateWebhookSignature({
+          xSignature,
+          xRequestId: WEBHOOK_TEST_REQUEST_ID,
+          dataId,
+        }),
+      ).resolves.toBe(false);
+    });
+
+    it('8c. validador oficial: headers ausentes → false', async () => {
+      await expect(
+        validateWebhookSignature({
+          xSignature: undefined,
+          xRequestId: undefined,
+          dataId: undefined,
+        }),
+      ).resolves.toBe(false);
     });
 
     it('8d. sanitizePaymentInput: completo → objeto, incompleto → null', () => {
