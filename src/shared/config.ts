@@ -8,6 +8,7 @@ export const JWT_REFRESH_SECRET =
 export const JWT_EXPIRES_IN = '15m';
 export const JWT_REFRESH_EXPIRES_IN = '7d';
 export const MERCADOPAGO_ACCESS_TOKEN = process.env.MERCADOPAGO_ACCESS_TOKEN;
+export const MP_WEBHOOK_SECRET = process.env.MP_WEBHOOK_SECRET;
 
 export const URL_FRONTEND = process.env.URL_FRONTEND;
 export const URL_BACKEND = process.env.URL_BACKEND;

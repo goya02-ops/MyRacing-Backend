@@ -1,5 +1,11 @@
 import crypto from 'crypto';
-import { MERCADOPAGO_ACCESS_TOKEN } from '../shared/config.js';
+// Import directo del submódulo real del SDK: el barrel `mercadopago` se
+// suplanta en tests, esta ruta siempre resuelve a la implementación genuina.
+import { WebhookSignatureValidator } from 'mercadopago/dist/utils/webhook/index.js';
+import {
+  MERCADOPAGO_ACCESS_TOKEN,
+  MP_WEBHOOK_SECRET,
+} from '../shared/config.js';
 import type { PaymentRequest } from './payment.types.js';
 
 /**
@@ -44,60 +50,41 @@ export function unlockPayment(key: string): void {
 }
 
 /**
- * Valida la firma HMAC del webhook de MercadoPago.
- * Utiliza el access token como clave secreta.
+ * Valida la firma oficial del webhook de MercadoPago con el validador del SDK.
  *
- * Contrato: la firma es el HMAC-SHA256 hex de `JSON.stringify(body)` con
- * el access token como key, calculado sobre el body SIN el campo
- * `x-mp-signature` (ese campo solo transporta la firma; si se incluyera,
- * el HMAC esperado contendría la propia firma y ningún emisor externo
- * podría validarlo jamás). Por defensa, si el body trae ese campo se
- * excluye antes de calcular. Una firma malformada (longitud distinta,
- * no-string, vacía) retorna false en vez de lanzar.
+ * El secret se lee de `MP_WEBHOOK_SECRET` con fallback a
+ * `MERCADOPAGO_ACCESS_TOKEN`: la firma se configura aparte cuando exista un
+ * secret dedicado, mientras tanto rige el de las credenciales. Sin ninguno
+ * se rechaza (fail-closed).
  *
- * @param body - Body raw del request (sin `x-mp-signature`, o con él:
- *   se excluye defensivamente)
- * @param signature - Firma recibida en el campo `x-mp-signature` del body
- * @returns true si la firma es válida
+ * Nunca lanza: ante cualquier fallo (headers ausentes, firma malformada,
+ * mismatch, error del SDK) retorna `false`.
+ *
+ * @param input - Valores crudos de `x-signature`, `x-request-id` y `data.id`
+ * @returns true si la firma oficial es válida
  */
-export function validateMpSignature(body: unknown, signature: string): boolean {
-  if (!MERCADOPAGO_ACCESS_TOKEN) {
+export function validateWebhookSignature(input: {
+  xSignature: string | undefined;
+  xRequestId: string | undefined;
+  dataId: string | undefined;
+}): boolean {
+  const secret = MP_WEBHOOK_SECRET || MERCADOPAGO_ACCESS_TOKEN;
+
+  if (!secret) {
     return false;
   }
 
-  if (typeof signature !== 'string' || signature.length === 0) {
+  try {
+    WebhookSignatureValidator.validate({
+      xSignature: input.xSignature,
+      xRequestId: input.xRequestId,
+      dataId: input.dataId,
+      secret,
+    });
+    return true;
+  } catch {
     return false;
   }
-
-  // Exclusión defensiva: la firma viaja en el body y no forma parte
-  // del payload firmado (ver contrato arriba).
-  const signable =
-    body !== null &&
-    typeof body === 'object' &&
-    !Array.isArray(body) &&
-    'x-mp-signature' in (body as Record<string, unknown>)
-      ? (() => {
-          const copy = { ...(body as Record<string, unknown>) };
-          delete copy['x-mp-signature'];
-          return copy;
-        })()
-      : body;
-
-  const expected = crypto
-    .createHmac('sha256', MERCADOPAGO_ACCESS_TOKEN)
-    .update(JSON.stringify(signable))
-    .digest('hex');
-
-  const a = Buffer.from(signature);
-  const b = Buffer.from(expected);
-
-  // timingSafeEqual lanza si difieren longitudes → rechazo limpio (false)
-  // en vez de escalar a 500 en el handler del webhook.
-  if (a.length !== b.length) {
-    return false;
-  }
-
-  return crypto.timingSafeEqual(a, b);
 }
 
 /**
