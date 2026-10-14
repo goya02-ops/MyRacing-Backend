@@ -373,51 +373,7 @@ describe('payment', () => {
       ).resolves.toBe(false);
     });
 
-    it('8e. validador oficial: secret dedicado manda sobre el fallback', async () => {
-      const dedicated = 'secret-dedicado-webhook';
-      const dataId = '12345';
-      const ts = freshTs();
-      const previous = process.env.MP_WEBHOOK_SECRET;
-      process.env.MP_WEBHOOK_SECRET = dedicated;
-      try {
-        const signedDedicated = mpOfficialSignature(
-          dataId,
-          WEBHOOK_TEST_REQUEST_ID,
-          ts,
-          dedicated,
-        );
-        await expect(
-          validateWebhookSignature({
-            xSignature: signedDedicated,
-            xRequestId: WEBHOOK_TEST_REQUEST_ID,
-            dataId,
-          }),
-        ).resolves.toBe(true);
-        // Firmada con el fallback mientras rige el dedicado → se rechaza,
-        // lo que prueba la precedencia del dedicado.
-        const signedFallback = mpOfficialSignature(
-          dataId,
-          WEBHOOK_TEST_REQUEST_ID,
-          ts,
-          MERCADOPAGO_ACCESS_TOKEN as string,
-        );
-        await expect(
-          validateWebhookSignature({
-            xSignature: signedFallback,
-            xRequestId: WEBHOOK_TEST_REQUEST_ID,
-            dataId,
-          }),
-        ).resolves.toBe(false);
-      } finally {
-        if (previous === undefined) {
-          delete process.env.MP_WEBHOOK_SECRET;
-        } else {
-          process.env.MP_WEBHOOK_SECRET = previous;
-        }
-      }
-    });
-
-    it('8f. sanitizePaymentInput: completo → objeto, incompleto → null', () => {
+    it('8e. sanitizePaymentInput: completo → objeto, incompleto → null', () => {
       expect(
         sanitizePaymentInput({ token: 't', payment_method_id: 'visa' }),
       ).toMatchObject({ token: 't', payment_method_id: 'visa' });
@@ -426,7 +382,7 @@ describe('payment', () => {
       expect(sanitizePaymentInput({ payment_method_id: 'visa' })).toBeNull();
     });
 
-    it('8g. lockPayment/unlockPayment: bloquea, rechaza duplicado, libera', () => {
+    it('8f. lockPayment/unlockPayment: bloquea, rechaza duplicado, libera', () => {
       const key = `unit-${Date.now()}`;
       expect(lockPayment(key)).toBe(true);
       expect(lockPayment(key)).toBe(false);

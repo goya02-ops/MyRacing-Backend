@@ -1,9 +1,6 @@
 import crypto from 'crypto';
 import { WebhookSignatureValidator } from 'mercadopago';
-import {
-  MERCADOPAGO_ACCESS_TOKEN,
-  MP_WEBHOOK_SECRET,
-} from '../shared/config.js';
+import { MERCADOPAGO_ACCESS_TOKEN } from '../shared/config.js';
 import type { PaymentRequest } from './payment.types.js';
 
 /**
@@ -56,11 +53,9 @@ export const WEBHOOK_TOLERANCE_SECONDS = 300;
 /**
  * Valida la firma oficial del webhook de MercadoPago con el validador del SDK.
  *
- * El secret se lee de `MP_WEBHOOK_SECRET` con fallback a
- * `MERCADOPAGO_ACCESS_TOKEN`: la firma se configura aparte cuando exista un
- * secret dedicado, mientras tanto rige el de las credenciales. Sin ninguno
- * se rechaza (fail-closed). Se lee `process.env` en cada llamada para que el
- * dedicado aplique sin reiniciar; el import de config queda como fallback.
+ * La key del HMAC es `MERCADOPAGO_ACCESS_TOKEN` (el de las credenciales).
+ * Sin token se rechaza (fail-closed). Se lee `process.env` en cada llamada
+ * para aplicar sin reiniciar; el import de config queda como fallback.
  *
  * Se exige una ventana temporal de `WEBHOOK_TOLERANCE_SECONDS`: el SDK
  * compara el `ts` del header contra `now` y rechaza lo que caiga fuera
@@ -83,9 +78,7 @@ export function validateWebhookSignature(
   now: () => number = Date.now,
 ): boolean {
   const secret =
-    process.env.MP_WEBHOOK_SECRET ||
-    MP_WEBHOOK_SECRET ||
-    MERCADOPAGO_ACCESS_TOKEN;
+    process.env.MERCADOPAGO_ACCESS_TOKEN || MERCADOPAGO_ACCESS_TOKEN;
 
   if (!secret) {
     return false;
