@@ -191,8 +191,11 @@ export async function receiveWebhookHandler(
   req: Request,
   res: Response,
 ): Promise<void> {
-  // Procesar webhook (validación de firma dentro del service)
-  await handleWebhookService(req.body);
+  // Procesar webhook (validación de firma oficial dentro del service)
+  await handleWebhookService(req.body, {
+    headers: req.headers as Record<string, string | string[] | undefined>,
+    query: req.query as Record<string, unknown>,
+  });
 
   // Siempre responder 200 a MP
   res.sendStatus(200);

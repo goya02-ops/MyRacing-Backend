@@ -18,7 +18,7 @@ import {
   generateIdempotencyKey,
   lockPayment,
   unlockPayment,
-  validateMpSignature,
+  validateWebhookSignature,
 } from './payment.utils.js';
 
 /**
@@ -234,42 +234,53 @@ export async function checkPaymentStatus(
 
 /**
  * Procesa el webhook recibido de MercadoPago.
- * Valida la firma HMAC antes de procesar.
+ * Valida la firma oficial (headers `x-signature`/`x-request-id` + `data.id`
+ * de query o body) antes de procesar. Siempre retorna un resultado, nunca
+ * lanza: el controller responde 200 en todos los casos para evitar
+ * reintentos de MP.
  *
  * @param body - Body del request del webhook
+ * @param request - Headers y query del request (firma oficial viaja ahí)
  * @returns Objeto indicando si se procesó correctamente
  */
 export async function handleWebhook(
   body: unknown,
+  request?: {
+    headers?: Record<string, string | string[] | undefined>;
+    query?: Record<string, unknown>;
+  },
 ): Promise<{ processed: boolean }> {
-  const rawBody = body as Record<string, unknown>;
+  const rawBody = (body ?? {}) as { type?: unknown; data?: { id?: unknown } };
+  const query = request?.query ?? {};
 
-  // Extraer firma del campo x-mp-signature del body
-  const signature = rawBody['x-mp-signature'] as string | undefined;
+  const xSignature = firstValue(request?.headers?.['x-signature']);
+  const xRequestId = firstValue(request?.headers?.['x-request-id']);
+  const dataId =
+    firstValue(query['data.id']) ?? asString(rawBody.data?.id);
+  const eventType = firstValue(query['type']) ?? asString(rawBody.type);
 
-  // Validar que existe firma
-  if (!signature) {
-    logger.warn('Webhook rejected', { reason: 'no_signature' });
+  // Validar firma oficial (fail-closed: sin secret o firma inválida → false)
+  if (
+    !validateWebhookSignature({ xSignature, xRequestId, dataId })
+  ) {
+    logger.warn('Webhook rejected', {
+      reason: 'invalid_signature',
+      requestId: xRequestId,
+    });
     return { processed: false };
   }
-
-  // Validar firma HMAC (validateMpSignature excluye x-mp-signature del
-  // cálculo: ese campo solo transporta la firma, no forma parte del payload)
-  if (!validateMpSignature(rawBody, signature)) {
-    logger.warn('Webhook rejected', { reason: 'invalid_signature' });
-    return { processed: false };
-  }
-
-  // Extraer datos del webhook
-  const webhookBody = rawBody as { type?: string; data?: { id?: string } };
-  const eventType = webhookBody.type;
-  const paymentId = webhookBody.data?.id;
 
   // Ignorar tipos de evento que no son pagos
-  if (eventType === 'merchant_order' || !paymentId || eventType !== 'payment') {
-    logger.info('Ignored webhook', { eventType, paymentId });
+  if (
+    eventType === 'merchant_order' ||
+    !dataId ||
+    eventType !== 'payment'
+  ) {
+    logger.info('Ignored webhook', { eventType, paymentId: dataId });
     return { processed: false };
   }
+
+  const paymentId = dataId;
 
   try {
     // Obtener datos del pago desde MP
@@ -295,6 +306,30 @@ export async function handleWebhook(
     logger.error('Webhook processing failed', { error: message, paymentId });
     return { processed: false };
   }
+}
+
+/**
+ * Normaliza un valor de header/query a string.
+ * Los frameworks pueden entregar `string | string[] | undefined`.
+ */
+function firstValue(value: unknown): string | undefined {
+  if (Array.isArray(value)) {
+    return typeof value[0] === 'string' ? value[0] : undefined;
+  }
+  return typeof value === 'string' ? value : undefined;
+}
+
+/**
+ * Normaliza un valor del body a string (solo acepta string o number).
+ */
+function asString(value: unknown): string | undefined {
+  if (typeof value === 'string') {
+    return value;
+  }
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return String(value);
+  }
+  return undefined;
 }
 
 /**
