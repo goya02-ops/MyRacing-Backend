@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 
-// Caracterización del gate de CI (issue #3): el CI debe correr tests
+// Caracterización del gate de CI: el CI debe correr tests
 // reales (`pnpm test`, sin `--if-present`) y la config de vitest debe
 // fijar `coverage.thresholds` ≥80. Se aserta sobre los fuentes porque son
 // config de CI/build, no testeables importando el módulo (ver AGENTS.md).
