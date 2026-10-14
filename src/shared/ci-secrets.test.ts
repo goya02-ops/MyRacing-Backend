@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 
-// Caracterización de secretos de CI (issue #23, espejo de FE-19):
+// Caracterización de secretos de CI:
 // el job `test` no debe hardcodear passwords MySQL en el yaml.
 // GitHub rechaza `${{ secrets.* }}` dentro de `jobs.*.services`,
 // así que MySQL se levanta en un step con `docker run -d`
@@ -9,7 +9,7 @@ import { readFileSync } from 'node:fs';
 // expandir secrets en bloques `run:`: van por `env:` del step
 // y en el script se usa `$VAR` (con `run:` ANTES que `env:`).
 // Se aserta sobre el fuente porque es config de CI, no testeable
-// importando el módulo (mismo patrón que ci-gate.test.ts de BE-3).
+// importando el módulo (mismo patrón que ci-gate.test.ts).
 // Solo lee el yaml con `readFileSync`: no importa código de app
 // (`src/shared/orm.ts` conecta a MySQL al importar).
 const ciYml = readFileSync(
@@ -17,7 +17,7 @@ const ciYml = readFileSync(
   'utf-8',
 );
 
-describe('CI secrets (BE-23)', () => {
+describe('CI secrets', () => {
   it('el job `test` no usa bloque `services:` con mysql', () => {
     expect(ciYml).not.toMatch(/services:\s*\n\s*mysql:/);
     expect(ciYml).not.toContain('services:');
