@@ -1,7 +1,5 @@
 import crypto from 'crypto';
-// Import directo del submódulo real del SDK: el barrel `mercadopago` se
-// suplanta en tests, esta ruta siempre resuelve a la implementación genuina.
-import { WebhookSignatureValidator } from 'mercadopago/dist/utils/webhook/index.js';
+import { WebhookSignatureValidator } from 'mercadopago';
 import {
   MERCADOPAGO_ACCESS_TOKEN,
   MP_WEBHOOK_SECRET,
@@ -50,25 +48,44 @@ export function unlockPayment(key: string): void {
 }
 
 /**
+ * Ventana máxima aceptada entre el `ts` de la firma y el reloj local.
+ * Mitiga replays: una firma válida pero vieja se rechaza.
+ */
+export const WEBHOOK_TOLERANCE_SECONDS = 300;
+
+/**
  * Valida la firma oficial del webhook de MercadoPago con el validador del SDK.
  *
  * El secret se lee de `MP_WEBHOOK_SECRET` con fallback a
  * `MERCADOPAGO_ACCESS_TOKEN`: la firma se configura aparte cuando exista un
  * secret dedicado, mientras tanto rige el de las credenciales. Sin ninguno
- * se rechaza (fail-closed).
+ * se rechaza (fail-closed). Se lee `process.env` en cada llamada para que el
+ * dedicado aplique sin reiniciar; el import de config queda como fallback.
+ *
+ * Se exige una ventana temporal de `WEBHOOK_TOLERANCE_SECONDS`: el SDK
+ * compara el `ts` del header contra `now` y rechaza lo que caiga fuera
+ * (replay o clock drift excesivo). `now` por defecto es `Date.now` y solo
+ * existe como parámetro para volver determinísticos los tests.
  *
  * Nunca lanza: ante cualquier fallo (headers ausentes, firma malformada,
- * mismatch, error del SDK) retorna `false`.
+ * mismatch, ts fuera de ventana, error del SDK) retorna `false`.
  *
  * @param input - Valores crudos de `x-signature`, `x-request-id` y `data.id`
- * @returns true si la firma oficial es válida
+ * @param now - Reloj en ms para la ventana temporal (default `Date.now`)
+ * @returns true si la firma oficial es válida y vigente
  */
-export function validateWebhookSignature(input: {
-  xSignature: string | undefined;
-  xRequestId: string | undefined;
-  dataId: string | undefined;
-}): boolean {
-  const secret = MP_WEBHOOK_SECRET || MERCADOPAGO_ACCESS_TOKEN;
+export function validateWebhookSignature(
+  input: {
+    xSignature: string | undefined;
+    xRequestId: string | undefined;
+    dataId: string | undefined;
+  },
+  now: () => number = Date.now,
+): boolean {
+  const secret =
+    process.env.MP_WEBHOOK_SECRET ||
+    MP_WEBHOOK_SECRET ||
+    MERCADOPAGO_ACCESS_TOKEN;
 
   if (!secret) {
     return false;
@@ -80,6 +97,8 @@ export function validateWebhookSignature(input: {
       xRequestId: input.xRequestId,
       dataId: input.dataId,
       secret,
+      toleranceSeconds: WEBHOOK_TOLERANCE_SECONDS,
+      now,
     });
     return true;
   } catch {
