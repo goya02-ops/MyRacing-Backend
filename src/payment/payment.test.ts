@@ -13,14 +13,24 @@ import request from 'supertest';
 //***********************************************************
 //SUPLANTACIÓN DE FUNCIONES DE MERCADOPAGO Y UTILS PARA TESTS
 //***********************************************************
-vi.mock('mercadopago', () => {
+vi.mock('mercadopago', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('mercadopago')>();
   const MercadoPagoConfig = vi.fn();
   const Preference = vi.fn();
   Preference.prototype.create = vi.fn();
   const Payment = vi.fn();
   Payment.prototype.create = vi.fn();
   Payment.prototype.get = vi.fn();
-  return { MercadoPagoConfig, Preference, Payment };
+  // El barrel se suplanta para aislar Preference/Payment, pero el
+  // validador de firma debe seguir siendo el real (mismo patrón que
+  // payment.utils.js abajo con importOriginal).
+  return {
+    ...actual,
+    MercadoPagoConfig,
+    Preference,
+    Payment,
+    WebhookSignatureValidator: actual.WebhookSignatureValidator,
+  };
 });
 
 // generateIdempotencyKey real genera claves únicas (timestamp+random), por lo
@@ -39,7 +49,6 @@ import { MERCADOPAGO_ACCESS_TOKEN, JWT_SECRET } from '../shared/config.js';
 import { User, UserType } from '../user/user.entity.js';
 import { Membership } from '../membership/membership.entity.js';
 import {
-  validateMpSignature,
   sanitizePaymentInput,
   lockPayment,
   unlockPayment,
@@ -58,12 +67,53 @@ function signJwt(user: User, type: string): string {
   return jwt.sign({ id: user.id, userName: user.userName, type }, JWT_SECRET);
 }
 
-//Simular la firma HMAC de MercadoPago para los tests de webhook. Se usa el mismo algoritmo y token que la implementación real.
-function mpSignature(body: unknown): string {
-  return crypto
-    .createHmac('sha256', MERCADOPAGO_ACCESS_TOKEN as string)
-    .update(JSON.stringify(body))
+//Construye la firma OFICIAL de MercadoPago para los tests de webhook:
+//HMAC-SHA256 hex del manifest `id:{dataId};request-id:{xRequestId};ts:{ts};`
+//con el secret, en formato de header `ts=...,v1=...`. El validador exige una
+//ventana temporal de 300s, así que el ts debe ser vigente (ver `freshTs()`);
+//el ts fijo viejo solo sirve para el test de rechazo por ventana expirada.
+const WEBHOOK_TEST_REQUEST_ID = 'req-test-123';
+const STALE_WEBHOOK_TS = '1750000000';
+
+//ts vigente en segundos para firmar webhooks que deben pasar la ventana.
+function freshTs(): string {
+  return String(Math.floor(Date.now() / 1000));
+}
+
+function mpOfficialSignature(
+  dataId: string,
+  requestId: string,
+  ts: string,
+  secret: string,
+): string {
+  const manifest = `id:${dataId};request-id:${requestId};ts:${ts};`;
+  const v1 = crypto
+    .createHmac('sha256', secret)
+    .update(manifest)
     .digest('hex');
+  return `ts=${ts},v1=${v1}`;
+}
+
+//Contrato del nuevo validador (a implementar en payment.utils.ts): recibe
+//los valores crudos de headers/query y el secret lo toma de la config.
+//Retorna true si la firma oficial es válida, false en cualquier otro caso.
+type WebhookSignatureInput = {
+  xSignature: string | undefined;
+  xRequestId: string | undefined;
+  dataId: string | undefined;
+};
+
+async function validateWebhookSignature(
+  input: WebhookSignatureInput,
+  now?: () => number,
+): Promise<boolean> {
+  const utils = (await import('./payment.utils.js')) as unknown as {
+    validateWebhookSignature: (
+      input: WebhookSignatureInput,
+      now?: () => number,
+    ) => boolean;
+  };
+  return utils.validateWebhookSignature(input, now);
 }
 
 describe('payment', () => {
@@ -200,68 +250,130 @@ describe('payment', () => {
     }
   });
 
-  it('6. webhook payment con firma HMAC real → 200 y usuario activado', async () => {
+  it('6. webhook payment con firma oficial → 200 y usuario activado', async () => {
     const user = await createCommonUser('wh');
-    const body = { type: 'payment', data: { id: '12345' } };
+    const dataId = '12345';
     paymentGet.mockResolvedValue({
       status: 'approved',
       id: 12345,
       external_reference: String(user.id),
     } as never);
+    const ts = freshTs();
     const res = await request(app)
       .post('/api/payment/wh-mp')
-      .send({ ...body, 'x-mp-signature': mpSignature(body) });
+      .query({ 'data.id': dataId, type: 'payment' })
+      .set(
+        'x-signature',
+        mpOfficialSignature(
+          dataId,
+          WEBHOOK_TEST_REQUEST_ID,
+          ts,
+          MERCADOPAGO_ACCESS_TOKEN as string,
+        ),
+      )
+      .set('x-request-id', WEBHOOK_TEST_REQUEST_ID)
+      .send({ type: 'payment', data: { id: dataId } });
     expect(res.status).toBe(200);
     expect(paymentGet).toHaveBeenCalledWith({ id: 12345 });
     expect((await freshUser(user.id!)).type).toBe(UserType.PREMIUM);
   });
 
-  it('7. webhook con firma inválida → 200 sin activación', async () => {
+  it('7. webhook con firma oficial corrupta → 200 sin activación', async () => {
     const user = await createCommonUser('whbad');
-    const body = { type: 'payment', data: { id: '67890' } };
+    const dataId = '67890';
+    const ts = freshTs();
+    // Firma bien formada pero con el hash alterado: el ts/requestId/dataId
+    // son los reales, solo el `v1` está corrompido. El rechazo es por
+    // mismatch criptográfico, no por headers ausentes.
+    const valid = mpOfficialSignature(
+      dataId,
+      WEBHOOK_TEST_REQUEST_ID,
+      ts,
+      MERCADOPAGO_ACCESS_TOKEN as string,
+    );
+    const last = valid.slice(-1);
+    const corrupted = `${valid.slice(0, -1)}${last === '0' ? '1' : '0'}`;
     const res = await request(app)
       .post('/api/payment/wh-mp')
-      // Misma longitud que un HMAC hex (64): timingSafeEqual no lanza.
-      .send({ ...body, 'x-mp-signature': '0'.repeat(64) });
+      .query({ 'data.id': dataId, type: 'payment' })
+      .set('x-signature', corrupted)
+      .set('x-request-id', WEBHOOK_TEST_REQUEST_ID)
+      .send({ type: 'payment', data: { id: dataId } });
     expect(res.status).toBe(200);
     expect(paymentGet).not.toHaveBeenCalled();
     expect((await freshUser(user.id!)).type).toBe(UserType.COMMON);
   });
 
   describe('utils puros (sin DB ni MP)', () => {
-    it('8a. validateMpSignature: válida → true', () => {
-      const body = { type: 'payment', data: { id: '1' } };
-      expect(validateMpSignature(body, mpSignature(body))).toBe(true);
-    });
-
-    it('8b. validateMpSignature: inválida (misma longitud) → false', () => {
-      expect(validateMpSignature({ type: 'payment' }, '0'.repeat(64))).toBe(
-        false,
+    it('8a. validador oficial: firma válida con secret correcto → true', async () => {
+      const dataId = '12345';
+      const ts = freshTs();
+      const xSignature = mpOfficialSignature(
+        dataId,
+        WEBHOOK_TEST_REQUEST_ID,
+        ts,
+        MERCADOPAGO_ACCESS_TOKEN as string,
       );
+      await expect(
+        validateWebhookSignature({
+          xSignature,
+          xRequestId: WEBHOOK_TEST_REQUEST_ID,
+          dataId,
+        }),
+      ).resolves.toBe(true);
     });
 
-    it('8c. validateMpSignature: sin token → false', async () => {
-      // Vaciar (no borrar): config re-ejecuta dotenv.config() al reimportar
-      // y dotenv restaura vars borradas desde .env, pero no pisa las que
-      // ya existen (ni siquiera vacías). '' es falsy → rama sin token.
-      const saved = process.env.MERCADOPAGO_ACCESS_TOKEN;
-      process.env.MERCADOPAGO_ACCESS_TOKEN = '';
-      // doUnmock: el import dinámico debe saltear la factoría del mock
-      // parcial (su importOriginal devuelve los utils originales con el
-      // config viejo cacheado) y re-ejecutar utils+config de verdad.
-      vi.doUnmock('./payment.utils.js');
-      vi.resetModules();
-      try {
-        const fresh = await import('./payment.utils.js');
-        expect(fresh.validateMpSignature({ a: 1 }, 'cualquier-firma')).toBe(
-          false,
-        );
-      } finally {
-        process.env.MERCADOPAGO_ACCESS_TOKEN = saved;
-      }
+    it('8b. validador oficial: secret incorrecto → false', async () => {
+      const dataId = '12345';
+      const ts = freshTs();
+      const xSignature = mpOfficialSignature(
+        dataId,
+        WEBHOOK_TEST_REQUEST_ID,
+        ts,
+        'secret-equivocado',
+      );
+      await expect(
+        validateWebhookSignature({
+          xSignature,
+          xRequestId: WEBHOOK_TEST_REQUEST_ID,
+          dataId,
+        }),
+      ).resolves.toBe(false);
     });
 
-    it('8d. sanitizePaymentInput: completo → objeto, incompleto → null', () => {
+    it('8c. validador oficial: headers ausentes → false', async () => {
+      await expect(
+        validateWebhookSignature({
+          xSignature: undefined,
+          xRequestId: undefined,
+          dataId: undefined,
+        }),
+      ).resolves.toBe(false);
+    });
+
+    it('8d. validador oficial: firma vieja fuera de ventana → false', async () => {
+      // HMAC correcto pero con ts muy anterior: el rechazo es por ventana
+      // temporal expirada, no por mismatch.
+      const dataId = '12345';
+      const xSignature = mpOfficialSignature(
+        dataId,
+        WEBHOOK_TEST_REQUEST_ID,
+        STALE_WEBHOOK_TS,
+        MERCADOPAGO_ACCESS_TOKEN as string,
+      );
+      await expect(
+        validateWebhookSignature(
+          {
+            xSignature,
+            xRequestId: WEBHOOK_TEST_REQUEST_ID,
+            dataId,
+          },
+          () => (Number(STALE_WEBHOOK_TS) + 301) * 1000,
+        ),
+      ).resolves.toBe(false);
+    });
+
+    it('8e. sanitizePaymentInput: completo → objeto, incompleto → null', () => {
       expect(
         sanitizePaymentInput({ token: 't', payment_method_id: 'visa' }),
       ).toMatchObject({ token: 't', payment_method_id: 'visa' });
@@ -270,7 +382,7 @@ describe('payment', () => {
       expect(sanitizePaymentInput({ payment_method_id: 'visa' })).toBeNull();
     });
 
-    it('8e. lockPayment/unlockPayment: bloquea, rechaza duplicado, libera', () => {
+    it('8f. lockPayment/unlockPayment: bloquea, rechaza duplicado, libera', () => {
       const key = `unit-${Date.now()}`;
       expect(lockPayment(key)).toBe(true);
       expect(lockPayment(key)).toBe(false);
