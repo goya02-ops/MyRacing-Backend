@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { Category } from './category.entity.js';
-import { orm } from '../shared/orm.js';
+import { CategoryService } from './category.service.js';
 import { handleControllerError } from '../shared/error.util.js';
 
 function sanitizeCategoryInput(
@@ -24,8 +23,7 @@ function sanitizeCategoryInput(
 
 async function getAll(req: Request, res: Response) {
   try {
-    const em = orm.em;
-    const categories = await em.find(Category, {});
+    const categories = await CategoryService.findAll();
     res
       .status(200)
       .json({ message: 'Find all categories classes', data: categories });
@@ -36,9 +34,8 @@ async function getAll(req: Request, res: Response) {
 
 async function getOne(req: Request, res: Response) {
   try {
-    const em = orm.em;
     const id = Number.parseInt(req.params.id as string);
-    const category = await em.findOneOrFail(Category, { id });
+    const category = await CategoryService.findOne(id);
     res.status(200).json({ message: 'Category found: ', data: category });
   } catch (error) {
     handleControllerError(error, res);
@@ -47,9 +44,7 @@ async function getOne(req: Request, res: Response) {
 
 async function add(req: Request, res: Response) {
   try {
-    const em = orm.em;
-    const category = em.create(Category, req.body);
-    await em.flush();
+    const category = await CategoryService.create(req.body);
     res.status(201).json({ message: 'Category class created', data: category });
   } catch (error) {
     handleControllerError(error, res);
@@ -58,11 +53,11 @@ async function add(req: Request, res: Response) {
 
 async function update(req: Request, res: Response) {
   try {
-    const em = orm.em;
     const id = Number.parseInt(req.params.id as string);
-    const category = await em.findOneOrFail(Category, { id });
-    em.assign(category, req.body.sanitizeInput);
-    await em.flush();
+    const category = await CategoryService.update(
+      id,
+      req.body.sanitizeInput
+    );
     res.status(200).json({ message: 'Category class updated', data: category });
   } catch (error) {
     handleControllerError(error, res);
@@ -71,10 +66,8 @@ async function update(req: Request, res: Response) {
 
 async function remove(req: Request, res: Response) {
   try {
-    const em = orm.em;
     const id = Number.parseInt(req.params.id as string);
-    const category = await em.findOneOrFail(Category, { id });
-    await em.removeAndFlush(category);
+    const category = await CategoryService.remove(id);
     res.status(200).json({ message: 'Category class deleted', data: category });
   } catch (error) {
     handleControllerError(error, res);
