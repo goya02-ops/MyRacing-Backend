@@ -304,6 +304,83 @@ describe('payment', () => {
     expect((await freshUser(user.id!)).type).toBe(UserType.COMMON);
   });
 
+  it('8. check-payment-status aprobado → 200 sin exponer objeto crudo de MP', async () => {
+    const user = await createCommonUser('st');
+    paymentGet.mockResolvedValue({
+      status: 'approved',
+      id: 555,
+      external_reference: String(user.id),
+      status_detail: 'accredited',
+      transaction_details: { secret: 'interno' },
+    } as never);
+    const res = await request(app)
+      .get('/api/payment/check-payment-status/555')
+      .set('Authorization', `Bearer ${signJwt(user, 'common')}`);
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe('approved');
+    expect(res.body.paymentId).toBe(555);
+    expect(res.body.data).toBeUndefined();
+    expect(JSON.stringify(res.body)).not.toContain('accredited');
+    expect(JSON.stringify(res.body)).not.toContain('interno');
+  });
+
+  it('9. process-payment rechazado → 400 sin reason con status_detail', async () => {
+    const user = await createCommonUser('rej');
+    paymentCreate.mockResolvedValue({
+      status: 'rejected',
+      id: 222,
+      external_reference: String(user.id),
+      status_detail: 'cc_rejected_insufficient_amount',
+    } as never);
+    const res = await request(app)
+      .post('/api/payment/process-payment')
+      .set('Authorization', `Bearer ${signJwt(user, 'common')}`)
+      .send({ token: 'tok_test', payment_method_id: 'visa' });
+    expect(res.status).toBe(400);
+    expect(res.body.status).toBe('rejected');
+    expect(res.body.reason).toBeUndefined();
+    expect(JSON.stringify(res.body)).not.toContain(
+      'cc_rejected_insufficient_amount',
+    );
+  });
+
+  it('10. process-payment cuando MP falla → 400 genérico sin mensaje del SDK', async () => {
+    const user = await createCommonUser('fail');
+    paymentCreate.mockRejectedValue(
+      new Error('MP interno: card_cc_rejected_xyz'),
+    );
+    const res = await request(app)
+      .post('/api/payment/process-payment')
+      .set('Authorization', `Bearer ${signJwt(user, 'common')}`)
+      .send({ token: 'tok_test', payment_method_id: 'visa' });
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe('No se pudo procesar el pago');
+    expect(JSON.stringify(res.body)).not.toContain('MP interno');
+  });
+
+  it('11. create-preference cuando MP falla → 500 genérico sin mensaje del SDK', async () => {
+    const user = await createCommonUser('prefail');
+    preferenceCreate.mockRejectedValue(new Error('MP interno: timeout_xyz'));
+    const res = await request(app)
+      .post('/api/payment/create-preference')
+      .set('Authorization', `Bearer ${signJwt(user, 'common')}`)
+      .send({});
+    expect(res.status).toBe(500);
+    expect(res.body.message).toBe('No se pudo crear la preferencia');
+    expect(JSON.stringify(res.body)).not.toContain('MP interno');
+  });
+
+  it('12. check-payment-status cuando MP falla → 400 genérico sin mensaje del SDK', async () => {
+    const user = await createCommonUser('stfail');
+    paymentGet.mockRejectedValue(new Error('MP interno: not_found_xyz'));
+    const res = await request(app)
+      .get('/api/payment/check-payment-status/999')
+      .set('Authorization', `Bearer ${signJwt(user, 'common')}`);
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe('No se pudo consultar el pago');
+    expect(JSON.stringify(res.body)).not.toContain('MP interno');
+  });
+
   describe('utils puros (sin DB ni MP)', () => {
     it('8a. validador oficial: firma válida con secret correcto → true', async () => {
       const dataId = '12345';

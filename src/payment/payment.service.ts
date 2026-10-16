@@ -116,7 +116,7 @@ export async function createPreference(
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     logger.error('Failed to create preference', { error: message });
-    return { success: false, error: message };
+    return { success: false, error: 'No se pudo crear la preferencia' };
   }
 }
 
@@ -189,7 +189,7 @@ export async function processPayment(
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     logger.error('Payment processing failed', { error: message });
-    return { success: false, error: message };
+    return { success: false, error: 'No se pudo procesar el pago' };
   } finally {
     // SIEMPRE desbloquear, sin importar el resultado
     unlockPayment(idempotencyKey);
@@ -228,7 +228,7 @@ export async function checkPaymentStatus(
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     logger.error('Payment status check failed', { error: message });
-    return { success: false, error: message };
+    return { success: false, error: 'No se pudo consultar el pago' };
   }
 }
 
