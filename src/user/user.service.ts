@@ -4,6 +4,7 @@
 // mensaje.
 import { orm } from '../shared/orm.js';
 import { ValidationError } from '../shared/validation-error.js';
+import type { Pagination } from '../shared/pagination.js';
 import { User, type UserType } from './user.entity.js';
 import { isValidEmail, validateRequired } from '../utils/validations.js';
 
@@ -17,9 +18,16 @@ export interface UserInput {
 }
 
 export const UserService = {
-  async findAll(): Promise<User[]> {
+  async findAll(
+    pagination: Pagination,
+  ): Promise<{ data: User[]; total: number }> {
     const em = orm.em;
-    return em.find(User, {});
+    const [data, total] = await em.findAndCount(User, {}, {
+      orderBy: { id: 'ASC' },
+      limit: pagination.limit,
+      offset: pagination.offset,
+    });
+    return { data, total };
   },
 
   async findOne(id: number): Promise<User> {

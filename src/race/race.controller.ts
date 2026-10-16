@@ -19,9 +19,11 @@ function sanitizeRaceInput(req: Request, res: Response, next: NextFunction) {
 async function getCurrentByCombination(req: Request, res: Response) {
   try {
     const { previousLimit, nextLimit, combination } = req.params;
+    // BE-13: los limites pueden venir por query param (ruta nueva sin segmentos
+    // de limite) o por path (ruta historica que usa el frontend).
     const data = await RaceService.findCurrentByCombination(
-      previousLimit as string,
-      nextLimit as string,
+      req.query.previousLimit ?? previousLimit,
+      req.query.nextLimit ?? nextLimit,
       combination as string,
     );
 

@@ -4,6 +4,7 @@
 import type { RequiredEntityData, EntityData } from '@mikro-orm/mysql';
 import { orm } from '../shared/orm.js';
 import { ValidationError } from '../shared/validation-error.js';
+import { clampLimit } from '../shared/pagination.js';
 import { Race } from './race.entity.js';
 import { validateCombinationAndDates } from './race.logic.js';
 import { validateIdParam, validateRequired } from '../utils/validations.js';
@@ -24,8 +25,8 @@ export interface CurrentRacesResult {
 
 export const RaceService = {
   async findCurrentByCombination(
-    previousLimit: string | number,
-    nextLimit: string | number,
+    previousLimit: unknown,
+    nextLimit: unknown,
     combination: string | number,
   ): Promise<CurrentRacesResult> {
     if (!validateIdParam(combination)) {
@@ -33,8 +34,9 @@ export const RaceService = {
     }
 
     const em = orm.em;
-    const limitPrev = Number.parseInt(String(previousLimit)) || 5;
-    const limitNext = Number.parseInt(String(nextLimit)) || 5;
+    // BE-13: la ruta es publica; sin clamp un cliente pedia limites gigantes.
+    const limitPrev = clampLimit(previousLimit, 5);
+    const limitNext = clampLimit(nextLimit, 5);
     const idCombination = Number.parseInt(String(combination));
     const currentDate = new Date();
 

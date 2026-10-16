@@ -11,11 +11,19 @@ import {
   getRaceUsersByUser,
 } from './race-user.service.js';
 import { sanitizeRaceUserInput, parseSanitizedInput } from './race-user.utils.js';
+import { parsePagination } from '../shared/pagination.js';
 
 export async function getAll(req: Request, res: Response): Promise<void> {
   try {
-    const data = await getAllRaceUsers();
-    res.status(200).json({ message: 'Find all race users', data });
+    const pagination = parsePagination(req.query);
+    const { data, total } = await getAllRaceUsers(pagination);
+    res.status(200).json({
+      message: 'Find all race users',
+      data,
+      total,
+      limit: pagination.limit,
+      offset: pagination.offset,
+    });
   } catch (error) {
     handleControllerError(error, res);
   }

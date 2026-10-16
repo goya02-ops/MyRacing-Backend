@@ -474,8 +474,11 @@ describe('Familia C: CombinationService (BE-22)', () => {
   });
 
   it('6. findAll y findCurrent filtran con populate aplicado', async () => {
-    const all = await inContext(() => CombinationService.findAll());
-    expect(Array.isArray(all)).toBe(true);
+    const page = await inContext(() =>
+      CombinationService.findAll({ limit: 20, offset: 0 }),
+    );
+    expect(Array.isArray(page.data)).toBe(true);
+    expect(page.total).toBeTypeOf('number');
     const current = await inContext(() => CombinationService.findCurrent());
     expect(Array.isArray(current)).toBe(true);
   });

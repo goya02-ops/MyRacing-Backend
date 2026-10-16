@@ -4,6 +4,7 @@
 import type { FilterQuery, RequiredEntityData, EntityData } from '@mikro-orm/mysql';
 import { orm } from '../shared/orm.js';
 import { ValidationError } from '../shared/validation-error.js';
+import type { Pagination } from '../shared/pagination.js';
 import { Combination } from './combination.entity.js';
 import { Race } from '../race/race.entity.js';
 import {
@@ -65,9 +66,17 @@ async function generateRaces(
 }
 
 export const CombinationService = {
-  async findAll(): Promise<Combination[]> {
+  async findAll(
+    pagination: Pagination,
+  ): Promise<{ data: Combination[]; total: number }> {
     const em = orm.em;
-    return em.find(Combination, {}, { populate: POPULATE });
+    const [data, total] = await em.findAndCount(Combination, {}, {
+      populate: POPULATE,
+      orderBy: { id: 'ASC' },
+      limit: pagination.limit,
+      offset: pagination.offset,
+    });
+    return { data, total };
   },
 
   async findCurrent(now: Date = new Date()): Promise<Combination[]> {
