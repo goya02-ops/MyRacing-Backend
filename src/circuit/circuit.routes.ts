@@ -5,7 +5,7 @@ import { authenticateToken, requireAdmin} from '../auth/auth.middleware.js';
 
 export const circuitRouter = Router();
 circuitRouter.get('/', authenticateToken, requireAdmin, controller.findAll);
-circuitRouter.get('/:id', authenticateToken, requireAdmin, controller.findAll);
+circuitRouter.get('/:id', authenticateToken, requireAdmin, controller.findOne);
 circuitRouter.post('/', authenticateToken, requireAdmin, controller.sanitizeCircuitInput, controller.add);
 circuitRouter.put('/:id', authenticateToken, requireAdmin, controller.sanitizeCircuitInput, controller.update);
 circuitRouter.patch('/:id', authenticateToken, requireAdmin, controller.sanitizeCircuitInput, controller.update);
