@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { Category } from './category.entity.js';
 import { orm } from '../shared/orm.js';
+import { handleControllerError } from '../shared/error.util.js';
 
 function sanitizeCategoryInput(
   req: Request,
@@ -29,7 +30,7 @@ async function getAll(req: Request, res: Response) {
       .status(200)
       .json({ message: 'Find all categories classes', data: categories });
   } catch (error) {
-    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
+    handleControllerError(error, res);
   }
 }
 
@@ -40,7 +41,7 @@ async function getOne(req: Request, res: Response) {
     const category = await em.findOneOrFail(Category, { id });
     res.status(200).json({ message: 'Category found: ', data: category });
   } catch (error) {
-    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
+    handleControllerError(error, res);
   }
 }
 
@@ -51,7 +52,7 @@ async function add(req: Request, res: Response) {
     await em.flush();
     res.status(201).json({ message: 'Category class created', data: category });
   } catch (error) {
-    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
+    handleControllerError(error, res);
   }
 }
 
@@ -64,7 +65,7 @@ async function update(req: Request, res: Response) {
     await em.flush();
     res.status(200).json({ message: 'Category class updated', data: category });
   } catch (error) {
-    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
+    handleControllerError(error, res);
   }
 }
 
@@ -76,7 +77,7 @@ async function remove(req: Request, res: Response) {
     await em.removeAndFlush(category);
     res.status(200).json({ message: 'Category class deleted', data: category });
   } catch (error) {
-    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
+    handleControllerError(error, res);
   }
 }
 

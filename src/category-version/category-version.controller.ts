@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { CategoryVersion } from './category-version.entity.js';
 import { orm } from '../shared/orm.js';
+import { handleControllerError } from '../shared/error.util.js';
 
 function sanitizeCategoryVersionInput(
   req: Request,
@@ -38,7 +39,7 @@ async function getAll(req: Request, res: Response) {
       .status(200)
       .json({ message: 'Find all Categories Version', data: categoryVersions });
   } catch (error) {
-    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
+    handleControllerError(error, res);
   }
 }
 
@@ -55,7 +56,7 @@ async function getOne(req: Request, res: Response) {
       .status(200)
       .json({ message: 'Category Version found', data: categoryVersion });
   } catch (error) {
-    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
+    handleControllerError(error, res);
   }
 }
 
@@ -74,7 +75,7 @@ async function add(req: Request, res: Response) {
       data: populatedCategoryVersion,
     });
   } catch (error) {
-    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
+    handleControllerError(error, res);
   }
 }
 
@@ -95,7 +96,7 @@ async function update(req: Request, res: Response) {
       data: populatedCategoryVersion,
     });
   } catch (error) {
-    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
+    handleControllerError(error, res);
   }
 }
 
@@ -109,7 +110,7 @@ async function remove(req: Request, res: Response) {
       .status(200)
       .json({ message: 'Category Version deleted', data: categoryVersion });
   } catch (error) {
-    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
+    handleControllerError(error, res);
   }
 }
 

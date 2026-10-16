@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { Membership } from './membership.entity.js';
 import { orm } from '../shared/orm.js';
 import { currentMembership } from '../utils/currentMembership.js';
+import { handleControllerError } from '../shared/error.util.js';
 
 function sanitizeMembresiaInput(
   req: Request,
@@ -29,7 +30,7 @@ async function getAll(req: Request, res: Response) {
       .status(200)
       .json({ message: 'Find all memberships classes', data: memberships });
   } catch (error) {
-    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
+    handleControllerError(error, res);
   }
 }
 const getCurrentMembership = async (req: Request, res: Response) => {
@@ -43,8 +44,7 @@ const getCurrentMembership = async (req: Request, res: Response) => {
 
     res.status(200).json({ data: cm });
   } catch (error) {
-    console.error('Error fetching current membership:', error);
-    res.status(500).json({ message: 'Error interno del servidor.' });
+    handleControllerError(error, res);
   }
 };
 
@@ -55,7 +55,7 @@ async function getOne(req: Request, res: Response) {
     const membership = await em.findOneOrFail(Membership, { id });
     res.status(200).json({ message: 'Membership found: ', data: membership });
   } catch (error) {
-    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
+    handleControllerError(error, res);
   }
 }
 
@@ -68,7 +68,7 @@ async function add(req: Request, res: Response) {
       .status(201)
       .json({ message: 'Membership class created', data: membership });
   } catch (error) {
-    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
+    handleControllerError(error, res);
   }
 }
 
@@ -83,7 +83,7 @@ async function update(req: Request, res: Response) {
       .status(200)
       .json({ message: 'Membership class updated', data: membership });
   } catch (error) {
-    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
+    handleControllerError(error, res);
   }
 }
 
@@ -97,7 +97,7 @@ async function remove(req: Request, res: Response) {
       .status(200)
       .json({ message: 'Membership class deleted', data: membership });
   } catch (error) {
-    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
+    handleControllerError(error, res);
   }
 }
 

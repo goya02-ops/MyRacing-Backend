@@ -15,7 +15,7 @@ import { raceRouter } from './race/race.routes.js';
 import { raceUserRouter } from './race-user/race-user.routes.js';
 import { authRouter } from './auth/auth.routes.js';
 import paymentRouter from './payment/payment.routes.js';
-import { errorHandler } from './shared/error-handler.middleware.js';
+import { errorHandler, notFoundHandler } from './shared/error-handler.middleware.js';
 import cors from 'cors';
 
 export const app = express();
@@ -39,9 +39,6 @@ app.use('/api/race-users', raceUserRouter);
 app.use('/api/payment', paymentRouter);
 app.use('/api/auth', authRouter);
 
-app.use(errorHandler);
+app.use(notFoundHandler);
 
-app.use((_, res) => {
-  res.status(404).json({ message: 'Not Found' });
-  return;
-});
+app.use(errorHandler);

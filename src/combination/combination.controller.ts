@@ -4,6 +4,7 @@ import { Combination } from './combination.entity.js';
 import { Race } from '../race/race.entity.js';
 import { validateSameSimulator, validateDate } from './combination.logic.js';
 import { orm } from '../shared/orm.js';
+import { handleControllerError } from '../shared/error.util.js';
 
 function sanitizeCombinationInput(
   req: Request,
@@ -76,7 +77,7 @@ async function getAll(req: Request, res: Response) {
       .status(200)
       .json({ message: 'Find all combinations', data: combinations });
   } catch (error) {
-    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
+    handleControllerError(error, res);
   }
 }
 
@@ -101,7 +102,7 @@ async function getCurrentRaces(req: Request, res: Response) {
       .status(200)
       .json({ message: 'Find current combinations', data: combinations });
   } catch (error) {
-    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
+    handleControllerError(error, res);
   }
 }
 
@@ -124,7 +125,7 @@ async function getOne(req: Request, res: Response) {
     );
     res.status(200).json({ message: 'Combination found', data: combination });
   } catch (error) {
-    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
+    handleControllerError(error, res);
   }
 }
 
@@ -184,7 +185,7 @@ async function add(req: Request, res: Response) {
       data: populatedCombination,
     });
   } catch (error) {
-    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
+    handleControllerError(error, res);
   }
 }
 
@@ -290,7 +291,7 @@ async function update(req: Request, res: Response) {
       .status(200)
       .json({ message: 'Combination updated', data: populatedCombination });
   } catch (error) {
-    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
+    handleControllerError(error, res);
   }
 }
 
@@ -302,7 +303,7 @@ async function remove(req: Request, res: Response) {
     await em.removeAndFlush(combination);
     res.status(200).json({ message: 'Combination deleted', data: combination });
   } catch (error) {
-    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
+    handleControllerError(error, res);
   }
 }
 
