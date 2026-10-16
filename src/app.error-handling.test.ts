@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -7,7 +7,6 @@ import request from 'supertest';
 import { NotFoundError } from '@mikro-orm/mysql';
 import type { Response } from 'express';
 import { app } from './app.js';
-import { orm } from './shared/orm.js';
 import { JWT_SECRET } from './shared/config.js';
 import { logger } from './shared/logger.js';
 import { handleControllerError } from './shared/error.util.js';
@@ -37,19 +36,10 @@ function createMockRes(): MockResponse {
   return res;
 }
 
+// El esquema lo sincroniza una sola vez `src/test/global-setup.ts` (ver
+// vitest.config.ts): hacerlo en el beforeAll de cada archivo provocaba una
+// carrera de DDL sobre la DB vacía de CI (BE-12).
 describe('manejo de errores (BE-12)', () => {
-  beforeAll(async () => {
-    // El MySQL de CI es efímero y vacío: sincronizar de forma NO destructiva
-    // como payment.test.ts. Si otro archivo ya sincronizó el esquema, es no-op.
-    try {
-      const generator = orm.getSchemaGenerator();
-      await generator.ensureDatabase();
-      await generator.updateSchema();
-    } catch {
-      // Las tablas ya pueden existir (las crea payment.test.ts en CI); no bloquea.
-    }
-  });
-
   afterEach(() => {
     vi.restoreAllMocks();
   });

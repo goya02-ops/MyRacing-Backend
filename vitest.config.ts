@@ -4,11 +4,12 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['src/**/*.{test,spec}.ts'],
+    setupFiles: ['./src/test/setup.ts'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json-summary'],
       include: ['src/**/*.ts'],
-      exclude: ['src/**/*.d.ts', 'src/**/*.{test,spec}.ts'],
+      exclude: ['src/**/*.d.ts', 'src/**/*.{test,spec}.ts', 'src/test/**'],
       // Gate de producción: cobertura TOTAL ≥80%.
       // Solo se evalúa cuando corre con --coverage (pnpm test:coverage),
       // que el CI ejecuta únicamente en PRs/pushes a main. En develop
