@@ -55,7 +55,7 @@ export async function addRaceUser(data: RaceUserAddRequest): Promise<{ success: 
   await em.flush();
   logger.info('Race user created', { raceUserId: raceUser.id, userId, raceId });
 
-  return { success: true };
+  return { success: true, data: mapToResponse(raceUser) };
 }
 
 export async function updateRaceUser(id: number, data: RaceUserUpdateRequest): Promise<{ success: boolean; error?: string }> {

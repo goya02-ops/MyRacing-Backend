@@ -8,6 +8,7 @@ import { CategoryVersion } from '../category-version/category-version.entity.js'
 import { CircuitVersion } from '../circuit-version/circuit-version.entity.js';
 import { Combination } from '../combination/combination.entity.js';
 import { Race } from '../race/race.entity.js';
+import { User, UserType } from '../user/user.entity.js';
 
 // Helpers compartidos por los tests de integracion: evitan duplicar el armado
 // del catalogo (Simulator/Category/Circuit + versiones) y el seed de
@@ -110,6 +111,23 @@ export async function seedCombination(
   });
   await em.persistAndFlush(combination);
   return combination;
+}
+
+export async function seedUser(
+  tag: string,
+  type: UserType = UserType.COMMON,
+): Promise<User> {
+  const em = orm.em.fork();
+  const suffix = uniqueSuffix(tag);
+  const user = em.create(User, {
+    userName: `user_${suffix}`,
+    realName: `${tag} user`,
+    email: `${suffix}@example.com`,
+    password: 'hashed',
+    type,
+  });
+  await em.persistAndFlush(user);
+  return user;
 }
 
 export async function seedRace(
