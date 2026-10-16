@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { CircuitVersion } from './circuit-version.entity.js';
 import { orm } from '../shared/orm.js';
+import { handleControllerError } from '../shared/error.util.js';
 
 function sanitizeCircuitVersionInput(
   req: Request,
@@ -39,7 +40,7 @@ async function findAll(req: Request, res: Response) {
       data: circuitVersions,
     });
   } catch (error) {
-    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
+    handleControllerError(error, res);
   }
 }
 
@@ -58,7 +59,7 @@ async function findOne(req: Request, res: Response) {
       .status(200)
       .json({ message: 'Circuit_Version found: ', data: circuitVersion });
   } catch (error) {
-    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
+    handleControllerError(error, res);
   }
 }
 
@@ -77,7 +78,7 @@ async function add(req: Request, res: Response) {
       data: populatedCircuitVersion,
     });
   } catch (error) {
-    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
+    handleControllerError(error, res);
   }
 }
 
@@ -100,7 +101,7 @@ async function update(req: Request, res: Response) {
         data: populatedCircuitVersion,
       });
   } catch (error) {
-    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
+    handleControllerError(error, res);
   }
 }
 
@@ -114,7 +115,7 @@ async function remove(req: Request, res: Response) {
       .status(200)
       .json({ message: 'CircuitVersion class deleted', data: circuitVersion });
   } catch (error) {
-    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
+    handleControllerError(error, res);
   }
 }
 

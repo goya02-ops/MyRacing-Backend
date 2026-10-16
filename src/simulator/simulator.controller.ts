@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { Simulator } from './simulator.entity.js';
 import { orm } from '../shared/orm.js';
+import { handleControllerError } from '../shared/error.util.js';
 
 function sanitizeSimulatorInput(
   req: Request,
@@ -28,7 +29,7 @@ async function findAll(req: Request, res: Response) {
       .status(200)
       .json({ message: 'Find all categories classes', data: simulators });
   } catch (error) {
-    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
+    handleControllerError(error, res);
   }
 }
 
@@ -43,7 +44,7 @@ async function findOne(req: Request, res: Response) {
     );
     res.status(200).json({ message: 'Simulator found: ', data: simulator });
   } catch (error) {
-    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
+    handleControllerError(error, res);
   }
 }
 
@@ -54,7 +55,7 @@ async function add(req: Request, res: Response) {
     await em.flush();
     res.status(201).json({ message: 'Simulator created', data: simulator });
   } catch (error) {
-    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
+    handleControllerError(error, res);
   }
 }
 
@@ -67,7 +68,7 @@ async function update(req: Request, res: Response) {
     await em.flush();
     res.status(200).json({ message: 'Simulator updated', data: simulator });
   } catch (error) {
-    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
+    handleControllerError(error, res);
   }
 }
 async function remove(req: Request, res: Response) {
@@ -78,7 +79,7 @@ async function remove(req: Request, res: Response) {
     await em.removeAndFlush(simulator);
     res.status(200).json({ message: 'Simulator deleted', data: simulator });
   } catch (error) {
-    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
+    handleControllerError(error, res);
   }
 }
 

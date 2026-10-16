@@ -17,3 +17,7 @@ export function errorHandler(
 
   res.status(500).json({ message: 'Error interno del servidor' });
 }
+
+export function notFoundHandler(_req: Request, res: Response): void {
+  res.status(404).json({ message: 'Not Found' });
+}

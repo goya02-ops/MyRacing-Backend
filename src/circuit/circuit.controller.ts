@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { Circuit } from './circuit.entity.js';
 import { orm } from '../shared/orm.js';
+import { handleControllerError } from '../shared/error.util.js';
 
 function sanitizeCircuitInput(req: Request, res: Response, next: NextFunction) {
   req.body.sanitizeInput = {
@@ -29,7 +30,7 @@ async function findAll(req: Request, res: Response) {
       .status(200)
       .json({ message: 'Find all circuits classes', data: circuits });
   } catch (error) {
-    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
+    handleControllerError(error, res);
   }
 }
 
@@ -44,7 +45,7 @@ async function findOne(req: Request, res: Response) {
     );
     res.status(200).json({ message: 'Circuit found: ', data: circuit });
   } catch (error) {
-    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
+    handleControllerError(error, res);
   }
 }
 
@@ -55,7 +56,7 @@ async function add(req: Request, res: Response) {
     await em.flush();
     res.status(201).json({ message: 'Circuit class created', data: circuit });
   } catch (error) {
-    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
+    handleControllerError(error, res);
   }
 }
 
@@ -68,7 +69,7 @@ async function update(req: Request, res: Response) {
     await em.flush();
     res.status(200).json({ message: 'Circuit class updated', data: circuit });
   } catch (error) {
-    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
+    handleControllerError(error, res);
   }
 }
 
@@ -80,7 +81,7 @@ async function remove(req: Request, res: Response) {
     await em.removeAndFlush(circuit);
     res.status(200).json({ message: 'Circuit class deleted', data: circuit });
   } catch (error) {
-    res.status(500).json({ data: error instanceof Error ? error.message : 'Unknown error' });
+    handleControllerError(error, res);
   }
 }
 
