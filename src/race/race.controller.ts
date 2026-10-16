@@ -157,27 +157,35 @@ async function update(req: Request, res: Response) {
       }
     }
 
-    if (
-      req.body.sanitizeInput.raceDateTime &&
-      req.body.sanitizeInput.registrationDeadline
-    ) {
-      const combinationIdFromBody = req.body.sanitizeInput.combination;
-      const combinationId = combinationIdFromBody 
-        ? Number.parseInt(combinationIdFromBody as string) 
-        : race.combination?.id;
-      
-      if (!combinationId) {
-        res.status(400).json({ message: 'ID de combinación requerido' });
-        return;
-      }
+    // BE-17: validar SIEMPRE la entidad fusionada (patch sobre la existente),
+    // con `await` sobre validateDates: sin él la validación nunca se aplicaba
+    // (Promise siempre truthy) y un patch de un solo campo con fechas
+    // invertidas quedaba aceptado.
+    const combinationIdFromBody = req.body.sanitizeInput.combination;
+    const combinationId = combinationIdFromBody
+      ? Number.parseInt(combinationIdFromBody as string)
+      : race.combination?.id;
 
-      const validDates = validateDates(req.body.sanitizeInput, combinationId);
-      if (!validDates) {
-        res.status(400).json({
-          message: 'registrationDeadline debe ser anterior a raceDateTime',
-        });
-        return;
-      }
+    if (!combinationId || !validateIdParam(combinationId)) {
+      res.status(400).json({
+        message: 'ID de combinación inválido o requerido',
+      });
+      return;
+    }
+
+    const mergedRace = {
+      raceDateTime: req.body.sanitizeInput.raceDateTime ?? race.raceDateTime,
+      registrationDeadline:
+        req.body.sanitizeInput.registrationDeadline ??
+        race.registrationDeadline,
+    } as unknown as Race;
+
+    const validDates = await validateDates(mergedRace, combinationId);
+    if (!validDates) {
+      res.status(400).json({
+        message: 'registrationDeadline debe ser anterior a raceDateTime',
+      });
+      return;
     }
 
     em.assign(race, req.body.sanitizeInput);
