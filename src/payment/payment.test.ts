@@ -33,15 +33,6 @@ vi.mock('mercadopago', async (importOriginal) => {
   };
 });
 
-// generateIdempotencyKey real genera claves únicas (timestamp+random), por lo
-// que el lock de pagos duplicados es inalcanzable por HTTP de forma
-// determinística. Se fija a una constante para poder pre-bloquearla en el
-// caso 5; el resto de utils se conserva real (importOriginal).
-vi.mock('./payment.utils.js', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('./payment.utils.js')>();
-  return { ...actual, generateIdempotencyKey: () => 'fixed-key' };
-});
-
 import { Preference, Payment } from 'mercadopago';
 import { app } from '../app.js';
 import { orm } from '../shared/orm.js';
@@ -173,10 +164,9 @@ describe('payment', () => {
     }
   });
 
-  // Limpiar mocks y desbloquear pago duplicado antes de cada test. El lock de pago se usa en el caso 5 para simular un pago duplicado.
+  // Limpiar mocks antes de cada test.
   beforeEach(() => {
     vi.clearAllMocks();
-    unlockPayment('fixed-key');
   });
 
   it('1. POST /api/payment/wh-mp con {} → 200 sin auth, sin DB, sin MP', async () => {
@@ -236,7 +226,8 @@ describe('payment', () => {
 
   it('5. process-payment duplicado (lock) → 409 Payment already in progress', async () => {
     const user = await createCommonUser('dup');
-    lockPayment('fixed-key');
+    const lockKey = `payment:${user.id}`;
+    lockPayment(lockKey);
     try {
       const res = await request(app)
         .post('/api/payment/process-payment')
@@ -246,8 +237,43 @@ describe('payment', () => {
       expect(res.body).toEqual({ message: 'Payment already in progress' });
       expect(paymentCreate).not.toHaveBeenCalled();
     } finally {
-      unlockPayment('fixed-key');
+      unlockPayment(lockKey);
     }
+  });
+
+  it('5b. doble submit concurrente → un solo cargo a MP y un 409', async () => {
+    const user = await createCommonUser('dbl');
+    const token = signJwt(user, 'common');
+    let releaseMp!: (value: unknown) => void;
+    const mpGate = new Promise((resolve) => {
+      releaseMp = resolve;
+    });
+    paymentCreate.mockImplementation(
+      () =>
+        mpGate.then(() => ({
+          status: 'approved',
+          id: 777,
+          external_reference: String(user.id),
+        })) as never,
+    );
+    const payload = { token: 'tok_test', payment_method_id: 'visa' };
+    const first = request(app)
+      .post('/api/payment/process-payment')
+      .set('Authorization', `Bearer ${token}`)
+      .send(payload);
+    // Dar tiempo a que el primer request tome el lock y quede en vuelo en MP.
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    const second = request(app)
+      .post('/api/payment/process-payment')
+      .set('Authorization', `Bearer ${token}`)
+      .send(payload);
+    // Liberar MP después de que el segundo ya fue rechazado por el lock.
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    releaseMp(null);
+    const [res1, res2] = await Promise.all([first, second]);
+    const statuses = [res1.status, res2.status].sort();
+    expect(statuses).toEqual([200, 409]);
+    expect(paymentCreate).toHaveBeenCalledTimes(1);
   });
 
   it('6. webhook payment con firma oficial → 200 y usuario activado', async () => {

@@ -5,7 +5,8 @@ import type { PaymentRequest } from './payment.types.js';
 
 /**
  * Set en memoria para rastrear pagos en proceso.
- * Evita que el usuario envíe múltiples requests de pago simultáneamente.
+ * La clave es estable por usuario (`payment:<userId>`): evita que el mismo
+ * usuario envíe múltiples requests de pago simultáneamente.
  */
 const processingPayments = new Set<string>();
 

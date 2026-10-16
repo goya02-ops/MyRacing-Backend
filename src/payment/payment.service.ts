@@ -134,12 +134,14 @@ export async function processPayment(
   userEmail: string,
   input: PaymentRequest,
 ): Promise<{ success: boolean; data?: MpPayment; error?: string }> {
-  const idempotencyKey = generateIdempotencyKey(userId);
-
-  // Intentar bloquear para evitar pagos duplicados desde el cliente
-  if (!lockPayment(idempotencyKey)) {
+  // Lock estable por usuario: dos submits concurrentes del mismo usuario
+  // colisionan y el segundo recibe 409 sin llamar a MP. La idempotency key
+  // enviada a MP sigue siendo única por intento admitido.
+  const lockKey = `payment:${userId}`;
+  if (!lockPayment(lockKey)) {
     return { success: false, error: 'Payment already in progress' };
   }
+  const idempotencyKey = generateIdempotencyKey(userId);
 
   try {
     // Obtener precio de la membresía
@@ -192,7 +194,7 @@ export async function processPayment(
     return { success: false, error: 'No se pudo procesar el pago' };
   } finally {
     // SIEMPRE desbloquear, sin importar el resultado
-    unlockPayment(idempotencyKey);
+    unlockPayment(lockKey);
   }
 }
 
