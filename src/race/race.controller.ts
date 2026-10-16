@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { Race } from './race.entity.js';
-import { validateDates } from '../race/race.logic.js';
+import { validateCombinationAndDates } from './race.logic.js';
 import { orm } from '../shared/orm.js';
 import { validateIdParam, validateRequired } from '../utils/validations.js';
 import { handleControllerError } from '../shared/error.util.js';
@@ -108,18 +108,12 @@ async function add(req: Request, res: Response) {
     }
 
     const idCombination = Number.parseInt(req.body.sanitizeInput.combination);
-    
-    if (!validateIdParam(idCombination)) {
-      res.status(400).json({ message: 'ID de combinación inválido' });
-      return;
-    }
-
-    const validDates = await validateDates(req.body.sanitizeInput, idCombination);
-
-    if (!validDates) {
-      res.status(400).json({
-        message: 'registrationDeadline debe ser anterior a raceDateTime',
-      });
+    const combinationError = await validateCombinationAndDates(
+      req.body.sanitizeInput,
+      idCombination,
+    );
+    if (combinationError) {
+      res.status(400).json({ message: combinationError });
       return;
     }
 
@@ -148,36 +142,25 @@ async function update(req: Request, res: Response) {
     const id = Number.parseInt(req.params.id as string);
     const race = await em.findOneOrFail(Race, { id });
 
-    if (req.body.sanitizeInput?.combination) {
-      const idCombination = Number.parseInt(req.body.sanitizeInput.combination);
-      
-      if (!validateIdParam(idCombination)) {
-        res.status(400).json({ message: 'ID de combinación inválido' });
-        return;
-      }
-    }
+    // BE-17: validar SIEMPRE la entidad fusionada (patch sobre la existente),
+    // no solo cuando el body trae ambas fechas. La combinacion sale del body o,
+    // si no viene, de la entidad.
+    const combinationId = req.body.sanitizeInput.combination
+      ? Number.parseInt(req.body.sanitizeInput.combination as string)
+      : race.combination?.id;
 
-    if (
-      req.body.sanitizeInput.raceDateTime &&
-      req.body.sanitizeInput.registrationDeadline
-    ) {
-      const combinationIdFromBody = req.body.sanitizeInput.combination;
-      const combinationId = combinationIdFromBody 
-        ? Number.parseInt(combinationIdFromBody as string) 
-        : race.combination?.id;
-      
-      if (!combinationId) {
-        res.status(400).json({ message: 'ID de combinación requerido' });
-        return;
-      }
-
-      const validDates = validateDates(req.body.sanitizeInput, combinationId);
-      if (!validDates) {
-        res.status(400).json({
-          message: 'registrationDeadline debe ser anterior a raceDateTime',
-        });
-        return;
-      }
+    const combinationError = await validateCombinationAndDates(
+      {
+        raceDateTime: req.body.sanitizeInput.raceDateTime ?? race.raceDateTime,
+        registrationDeadline:
+          req.body.sanitizeInput.registrationDeadline ??
+          race.registrationDeadline,
+      },
+      combinationId,
+    );
+    if (combinationError) {
+      res.status(400).json({ message: combinationError });
+      return;
     }
 
     em.assign(race, req.body.sanitizeInput);
