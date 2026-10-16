@@ -124,7 +124,6 @@ export async function processPaymentHandler(
         status: 'rejected',
         message: 'Payment rejected',
         paymentId: payment.id,
-        reason: payment.status_detail,
       });
       return;
     }
@@ -173,7 +172,7 @@ export async function checkPaymentStatusHandler(
     res.status(200).json({
       status: payment.status,
       message: 'Payment status',
-      data: payment,
+      paymentId: payment.id,
     });
   } catch (error) {
     handleControllerError(error, res);
