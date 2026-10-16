@@ -1,94 +1,45 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import request from 'supertest';
-import jwt from 'jsonwebtoken';
 import { app } from '../app.js';
 import { orm } from '../shared/orm.js';
-import { JWT_SECRET } from '../shared/config.js';
-import { Simulator } from '../simulator/simulator.entity.js';
-import { Category } from '../category/category.entity.js';
-import { Circuit } from '../circuit/circuit.entity.js';
-import { CategoryVersion } from '../category-version/category-version.entity.js';
-import { CircuitVersion } from '../circuit-version/circuit-version.entity.js';
 import { Combination } from '../combination/combination.entity.js';
 import { Race } from './race.entity.js';
+import {
+  adminToken,
+  seedCatalog,
+  cleanupCatalog,
+  seedCombination,
+  seedRace,
+  type CatalogIds,
+} from '../test/fixtures.js';
 
 // BE-17: en `update` faltaba `await` sobre `validateDates` (Promise siempre
 // truthy => la validacion nunca se aplicaba) y solo se validaba cuando el body
 // traia AMBAS fechas. Ampliacion de auditoria: validar SIEMPRE la entidad
 // fusionada (patch sobre la existente), asi un patch de un solo campo con
 // fechas invertidas queda rechazado.
-function adminToken(): string {
-  return jwt.sign({ id: 1, userName: 'test-admin', type: 'admin' }, JWT_SECRET);
-}
-
 const DATE_FROM = '2026-01-01T00:00:00.000Z';
 const DATE_TO = '2026-01-01T04:00:00.000Z';
 const RACE_AT = '2026-01-01T02:00:00.000Z';
 const DEADLINE = '2026-01-01T01:45:00.000Z';
 
 describe('race.controller: update valida la entidad fusionada con await (BE-17)', () => {
-  let simulatorId: number;
-  let categoryId: number;
-  let circuitId: number;
-  let categoryVersionId: number;
-  let circuitVersionId: number;
+  let catalog: CatalogIds;
   let combinationId: number;
   let raceId: number;
 
   beforeAll(async () => {
-    const em = orm.em.fork();
-    const suffix = `${Date.now()}_${Math.floor(Math.random() * 1e6)}`;
-
-    const simulator = em.create(Simulator, { name: `be17_${suffix}`, status: 'active' });
-    const category = em.create(Category, {
-      denomination: `be17_cat_${suffix}`,
-      description: 'BE-17 category',
-      abbreviation: 'B17C',
-    });
-    const circuit = em.create(Circuit, {
-      denomination: `be17_cir_${suffix}`,
-      description: 'BE-17 circuit',
-      abbreviation: 'B17R',
-    });
-    await em.persistAndFlush([simulator, category, circuit]);
-
-    const categoryVersion = em.create(CategoryVersion, {
-      status: 'active',
-      category,
-      simulator,
-    });
-    const circuitVersion = em.create(CircuitVersion, {
-      status: 'active',
-      circuit,
-      simulator,
-    });
-    await em.persistAndFlush([categoryVersion, circuitVersion]);
-
-    const combination = em.create(Combination, {
+    catalog = await seedCatalog('be17');
+    const combination = await seedCombination(catalog, {
       dateFrom: new Date(DATE_FROM),
       dateTo: new Date(DATE_TO),
-      lapsNumber: 3,
-      raceIntervalMinutes: 60,
-      obligatoryStopsQuantity: 1,
-      userType: 'common',
-      categoryVersion,
-      circuitVersion,
     });
-    await em.persistAndFlush(combination);
-
-    const race = em.create(Race, {
-      raceDateTime: new Date(RACE_AT),
-      registrationDeadline: new Date(DEADLINE),
-      combination,
-    });
-    await em.persistAndFlush(race);
-
-    simulatorId = simulator.id!;
-    categoryId = category.id!;
-    circuitId = circuit.id!;
-    categoryVersionId = categoryVersion.id!;
-    circuitVersionId = circuitVersion.id!;
     combinationId = combination.id!;
+    const race = await seedRace(
+      combination.id!,
+      new Date(RACE_AT),
+      new Date(DEADLINE),
+    );
     raceId = race.id!;
   });
 
@@ -96,11 +47,7 @@ describe('race.controller: update valida la entidad fusionada con await (BE-17)'
     const em = orm.em.fork();
     await em.nativeDelete(Race, { id: raceId });
     await em.nativeDelete(Combination, { id: combinationId });
-    await em.nativeDelete(CategoryVersion, { id: categoryVersionId });
-    await em.nativeDelete(CircuitVersion, { id: circuitVersionId });
-    await em.nativeDelete(Category, { id: categoryId });
-    await em.nativeDelete(Circuit, { id: circuitId });
-    await em.nativeDelete(Simulator, { id: simulatorId });
+    await cleanupCatalog(catalog);
   });
 
   function patch(body: Record<string, unknown>) {

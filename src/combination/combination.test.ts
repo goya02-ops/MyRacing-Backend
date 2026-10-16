@@ -1,16 +1,15 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import request from 'supertest';
-import jwt from 'jsonwebtoken';
 import { app } from '../app.js';
 import { orm } from '../shared/orm.js';
-import { JWT_SECRET } from '../shared/config.js';
-import { Simulator } from '../simulator/simulator.entity.js';
-import { Category } from '../category/category.entity.js';
-import { Circuit } from '../circuit/circuit.entity.js';
-import { CategoryVersion } from '../category-version/category-version.entity.js';
-import { CircuitVersion } from '../circuit-version/circuit-version.entity.js';
 import { Combination } from './combination.entity.js';
 import { Race } from '../race/race.entity.js';
+import {
+  adminToken,
+  seedCatalog,
+  cleanupCatalog,
+  type CatalogIds,
+} from '../test/fixtures.js';
 // BE-19: guards del generador de carreras. En ROJO contra el código actual:
 // con raceIntervalMinutes <= 0 el `while` de generateRaces no avanza (loop
 // infinito en memoria antes del flush) y no hay tope de filas ni batcheo.
@@ -22,54 +21,12 @@ import {
   MAX_RACES_PER_COMBINATION,
 } from './combination.logic.js';
 
-function adminToken(): string {
-  // `authenticateToken` solo verifica la firma; `requireAdmin` exige admin.
-  return jwt.sign({ id: 1, userName: 'test-admin', type: 'admin' }, JWT_SECRET);
-}
-
 describe('combination: guards del generador de carreras (BE-19)', () => {
-  let simulatorId: number;
-  let categoryId: number;
-  let circuitId: number;
-  let categoryVersionId: number;
-  let circuitVersionId: number;
+  let catalog: CatalogIds;
   const combinationIds: number[] = [];
 
   beforeAll(async () => {
-    const em = orm.em.fork();
-    const suffix = `${Date.now()}_${Math.floor(Math.random() * 1e6)}`;
-
-    const simulator = em.create(Simulator, { name: `be19_${suffix}`, status: 'active' });
-    const category = em.create(Category, {
-      denomination: `be19_cat_${suffix}`,
-      description: 'BE-19 category',
-      abbreviation: 'B19C',
-    });
-    const circuit = em.create(Circuit, {
-      denomination: `be19_cir_${suffix}`,
-      description: 'BE-19 circuit',
-      abbreviation: 'B19R',
-    });
-    await em.persistAndFlush([simulator, category, circuit]);
-
-    // Mismo simulador para CategoryVersion y CircuitVersion (requisito del POST).
-    const categoryVersion = em.create(CategoryVersion, {
-      status: 'active',
-      category,
-      simulator,
-    });
-    const circuitVersion = em.create(CircuitVersion, {
-      status: 'active',
-      circuit,
-      simulator,
-    });
-    await em.persistAndFlush([categoryVersion, circuitVersion]);
-
-    simulatorId = simulator.id!;
-    categoryId = category.id!;
-    circuitId = circuit.id!;
-    categoryVersionId = categoryVersion.id!;
-    circuitVersionId = circuitVersion.id!;
+    catalog = await seedCatalog('be19');
   });
 
   afterAll(async () => {
@@ -80,11 +37,7 @@ describe('combination: guards del generador de carreras (BE-19)', () => {
       await em.nativeDelete(Race, { combination: { $in: combinationIds } });
       await em.nativeDelete(Combination, { id: { $in: combinationIds } });
     }
-    await em.nativeDelete(CategoryVersion, { id: categoryVersionId });
-    await em.nativeDelete(CircuitVersion, { id: circuitVersionId });
-    await em.nativeDelete(Category, { id: categoryId });
-    await em.nativeDelete(Circuit, { id: circuitId });
-    await em.nativeDelete(Simulator, { id: simulatorId });
+    await cleanupCatalog(catalog);
   });
 
   function payload(overrides: Record<string, unknown> = {}) {
@@ -95,8 +48,8 @@ describe('combination: guards del generador de carreras (BE-19)', () => {
       obligatoryStopsQuantity: 1,
       userType: 'common',
       raceIntervalMinutes: 60,
-      categoryVersion: categoryVersionId,
-      circuitVersion: circuitVersionId,
+      categoryVersion: catalog.categoryVersionId,
+      circuitVersion: catalog.circuitVersionId,
       ...overrides,
     };
   }
