@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import type { AuthenticatedRequest } from '../auth/auth.middleware.js';
 import { UserService } from './user.service.js';
 import { validateIdParam } from '../utils/validations.js';
+import { parsePagination } from '../shared/pagination.js';
 import { handleControllerError } from '../shared/error.util.js';
 
 function sanitizeUserInput(req: Request, res: Response, next: NextFunction) {
@@ -23,8 +24,15 @@ function sanitizeUserInput(req: Request, res: Response, next: NextFunction) {
 
 async function getAll(req: Request, res: Response) {
   try {
-    const users = await UserService.findAll();
-    res.status(200).json({ message: 'Find all users', data: users });
+    const pagination = parsePagination(req.query);
+    const { data, total } = await UserService.findAll(pagination);
+    res.status(200).json({
+      message: 'Find all users',
+      data,
+      total,
+      limit: pagination.limit,
+      offset: pagination.offset,
+    });
   } catch (error) {
     handleControllerError(error, res);
   }

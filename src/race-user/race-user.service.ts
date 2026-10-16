@@ -3,16 +3,28 @@
  */
 
 import { orm } from '../shared/orm.js';
+import type { Pagination } from '../shared/pagination.js';
 import { RaceUser } from './race-user.entity.js';
 import { User } from '../user/user.entity.js';
 import { Race } from '../race/race.entity.js';
 import type { RaceUserAddRequest, RaceUserUpdateRequest, RaceUserResponse } from './race-user.types.js';
 import { logger } from '../shared/logger.js';
 
-export async function getAllRaceUsers(): Promise<RaceUserResponse[]> {
+export async function getAllRaceUsers(
+  pagination: Pagination,
+): Promise<{ data: RaceUserResponse[]; total: number }> {
   const em = orm.em;
-  const raceUsers = await em.find(RaceUser, {}, { populate: ['race', 'user'] });
-  return raceUsers.map(mapToResponse);
+  const [raceUsers, total] = await em.findAndCount(
+    RaceUser,
+    {},
+    {
+      populate: ['race', 'user'],
+      orderBy: { id: 'ASC' },
+      limit: pagination.limit,
+      offset: pagination.offset,
+    },
+  );
+  return { data: raceUsers.map(mapToResponse), total };
 }
 
 export async function getOneRaceUser(id: number): Promise<RaceUserResponse | null> {

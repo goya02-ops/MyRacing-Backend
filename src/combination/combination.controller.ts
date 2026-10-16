@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { CombinationService } from './combination.service.js';
+import { parsePagination } from '../shared/pagination.js';
 import { handleControllerError } from '../shared/error.util.js';
 
 function sanitizeCombinationInput(
@@ -28,10 +29,17 @@ function sanitizeCombinationInput(
 
 async function getAll(req: Request, res: Response) {
   try {
-    const combinations = await CombinationService.findAll();
+    const pagination = parsePagination(req.query);
+    const { data, total } = await CombinationService.findAll(pagination);
     res
       .status(200)
-      .json({ message: 'Find all combinations', data: combinations });
+      .json({
+        message: 'Find all combinations',
+        data,
+        total,
+        limit: pagination.limit,
+        offset: pagination.offset,
+      });
   } catch (error) {
     handleControllerError(error, res);
   }
