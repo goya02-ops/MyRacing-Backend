@@ -54,6 +54,7 @@ jobs:
       JWT_SECRET: ci_secret_for_tests
       JWT_REFRESH_SECRET: ci_refresh_secret_for_tests
       MERCADOPAGO_ACCESS_TOKEN: ci_mp_token_for_tests 
+      URL_FRONTEND: http://localhost:5173
     steps:
       - name: Start MySQL (ephemeral, CI only)
         # Secrets por env (Sonar S7636: nunca expandir secrets en run).
