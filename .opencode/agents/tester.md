@@ -18,8 +18,8 @@ Reglas:
 - TDD: primero el test en rojo. Codigo nuevo: test que falla.
   Codigo existente: tests de caracterizacion que fijan el comportamiento
   actual (en issues de bug, el test debe exponer el bug y fallar).
-- Verificacion = ejecutar, no afirmar: `pnpm build` (+ `pnpm test` cuando
-  BE-2/BE-3 lo hagan real). Ojo con la DB: local puerto 3307
+- Verificacion = ejecutar, no afirmar: `pnpm build && pnpm test`.
+  Ojo con la DB: local puerto 3307
   (`compose.dev.yaml`), CI 3306; no mezclar. Reporta el resultado exacto
   al orquestador.
 - Commits `test:` atomicos en la rama actual. NO pushees (permiso denegado),

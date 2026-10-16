@@ -57,8 +57,13 @@ Required in `.env` (see `.env.example`): `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_US
 
 ## Skills
 
-- Skills instaladas en `.agents/skills/`: `mysql` (queries, índices, N+1),
-  `docker-expert` / `multi-stage-dockerfile`. Cargar solo cuando aplique.
-- Testing con **Vitest** (+ supertest desde BE-2); no usar Jest.
+- Skills vendoreadas en `.agents/skills/`: `tdd` (siempre en issues de
+  tests), `security-audit`, `mysql` (queries, índices, N+1),
+  `docker-expert` / `multi-stage-dockerfile`, `typescript-advanced-types`.
+  Cargar solo cuando aplique (si el skill tool no resuelve el ID, leer el
+  `SKILL.md` directo).
+- Testing con **Vitest** (+ supertest); no usar Jest.
 - Subagentes de referencia en `.opencode/agents/` (programador/tester/juez;
   flujo TDD en el `AGENTS.md` raíz de DevOps).
+- Si algo cruza al otro repo (API, auth, pagos), elevar al chat orquestador
+  en vez de asumir.
