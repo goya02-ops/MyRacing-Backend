@@ -1,7 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { Membership } from './membership.entity.js';
-import { orm } from '../shared/orm.js';
-import { currentMembership } from '../utils/currentMembership.js';
+import { MembershipService } from './membership.service.js';
 import { handleControllerError } from '../shared/error.util.js';
 
 function sanitizeMembresiaInput(
@@ -24,8 +22,7 @@ function sanitizeMembresiaInput(
 
 async function getAll(req: Request, res: Response) {
   try {
-    const em = orm.em;
-    const memberships = await em.find(Membership, {});
+    const memberships = await MembershipService.findAll();
     res
       .status(200)
       .json({ message: 'Find all memberships classes', data: memberships });
@@ -35,7 +32,7 @@ async function getAll(req: Request, res: Response) {
 }
 const getCurrentMembership = async (req: Request, res: Response) => {
   try {
-    const cm = await currentMembership();
+    const cm = await MembershipService.getCurrent();
     if (!cm) {
       return res.status(404).json({
         message: 'No se encontró un precio de membresía configurado.',
@@ -50,9 +47,8 @@ const getCurrentMembership = async (req: Request, res: Response) => {
 
 async function getOne(req: Request, res: Response) {
   try {
-    const em = orm.em;
     const id = Number.parseInt(req.params.id as string);
-    const membership = await em.findOneOrFail(Membership, { id });
+    const membership = await MembershipService.findOne(id);
     res.status(200).json({ message: 'Membership found: ', data: membership });
   } catch (error) {
     handleControllerError(error, res);
@@ -61,9 +57,7 @@ async function getOne(req: Request, res: Response) {
 
 async function add(req: Request, res: Response) {
   try {
-    const em = orm.em;
-    const membership = em.create(Membership, req.body.sanitizeInput);
-    await em.flush();
+    const membership = await MembershipService.create(req.body.sanitizeInput);
     res
       .status(201)
       .json({ message: 'Membership class created', data: membership });
@@ -74,11 +68,11 @@ async function add(req: Request, res: Response) {
 
 async function update(req: Request, res: Response) {
   try {
-    const em = orm.em;
     const id = Number.parseInt(req.params.id as string);
-    const membership = await em.findOneOrFail(Membership, { id });
-    em.assign(membership, req.body.sanitizeInput);
-    await em.flush();
+    const membership = await MembershipService.update(
+      id,
+      req.body.sanitizeInput
+    );
     res
       .status(200)
       .json({ message: 'Membership class updated', data: membership });
@@ -89,10 +83,8 @@ async function update(req: Request, res: Response) {
 
 async function remove(req: Request, res: Response) {
   try {
-    const em = orm.em;
     const id = Number.parseInt(req.params.id as string);
-    const membership = await em.findOneOrFail(Membership, { id });
-    await em.removeAndFlush(membership);
+    const membership = await MembershipService.remove(id);
     res
       .status(200)
       .json({ message: 'Membership class deleted', data: membership });

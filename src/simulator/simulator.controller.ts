@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { Simulator } from './simulator.entity.js';
-import { orm } from '../shared/orm.js';
+import { SimulatorService } from './simulator.service.js';
 import { handleControllerError } from '../shared/error.util.js';
 
 function sanitizeSimulatorInput(
@@ -23,8 +22,7 @@ function sanitizeSimulatorInput(
 
 async function findAll(req: Request, res: Response) {
   try {
-    const em = orm.em;
-    const simulators = await em.find(Simulator, {});
+    const simulators = await SimulatorService.findAll();
     res
       .status(200)
       .json({ message: 'Find all categories classes', data: simulators });
@@ -35,13 +33,8 @@ async function findAll(req: Request, res: Response) {
 
 async function findOne(req: Request, res: Response) {
   try {
-    const em = orm.em;
     const id = Number.parseInt(req.params.id as string);
-    const simulator = await em.findOneOrFail(
-      Simulator,
-      { id },
-      { populate: ['circuits.circuit', 'categories.category'] }
-    );
+    const simulator = await SimulatorService.findOne(id);
     res.status(200).json({ message: 'Simulator found: ', data: simulator });
   } catch (error) {
     handleControllerError(error, res);
@@ -50,9 +43,7 @@ async function findOne(req: Request, res: Response) {
 
 async function add(req: Request, res: Response) {
   try {
-    const em = orm.em;
-    const simulator = em.create(Simulator, req.body);
-    await em.flush();
+    const simulator = await SimulatorService.create(req.body);
     res.status(201).json({ message: 'Simulator created', data: simulator });
   } catch (error) {
     handleControllerError(error, res);
@@ -61,11 +52,11 @@ async function add(req: Request, res: Response) {
 
 async function update(req: Request, res: Response) {
   try {
-    const em = orm.em;
     const id = Number.parseInt(req.params.id as string);
-    const simulator = await em.findOneOrFail(Simulator, { id });
-    em.assign(simulator, req.body.sanitizeInput);
-    await em.flush();
+    const simulator = await SimulatorService.update(
+      id,
+      req.body.sanitizeInput
+    );
     res.status(200).json({ message: 'Simulator updated', data: simulator });
   } catch (error) {
     handleControllerError(error, res);
@@ -73,10 +64,8 @@ async function update(req: Request, res: Response) {
 }
 async function remove(req: Request, res: Response) {
   try {
-    const em = orm.em;
     const id = Number.parseInt(req.params.id as string);
-    const simulator = await em.findOneOrFail(Simulator, { id });
-    await em.removeAndFlush(simulator);
+    const simulator = await SimulatorService.remove(id);
     res.status(200).json({ message: 'Simulator deleted', data: simulator });
   } catch (error) {
     handleControllerError(error, res);

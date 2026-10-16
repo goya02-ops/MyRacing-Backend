@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { CategoryVersion } from './category-version.entity.js';
-import { orm } from '../shared/orm.js';
+import { CategoryVersionService } from './category-version.service.js';
 import { handleControllerError } from '../shared/error.util.js';
 
 function sanitizeCategoryVersionInput(
@@ -28,12 +27,7 @@ function sanitizeCategoryVersionInput(
 async function getAll(req: Request, res: Response) {
   //Obtiene todas las versiones de categoria
   try {
-    const em = orm.em;
-    const categoryVersions = await em.find(
-      CategoryVersion,
-      {},
-      { populate: ['simulator', 'category'] }
-    );
+    const categoryVersions = await CategoryVersionService.findAll();
     //Basicamente traemos los registros de CategoryVersion y ademas los obj completos de sim y cat
     res
       .status(200)
@@ -45,13 +39,8 @@ async function getAll(req: Request, res: Response) {
 
 async function getOne(req: Request, res: Response) {
   try {
-    const em = orm.em;
     const id = Number.parseInt(req.params.id as string);
-    const categoryVersion = await em.findOneOrFail(
-      CategoryVersion,
-      { id },
-      { populate: ['simulator', 'category'] }
-    );
+    const categoryVersion = await CategoryVersionService.findOne(id);
     res
       .status(200)
       .json({ message: 'Category Version found', data: categoryVersion });
@@ -62,17 +51,12 @@ async function getOne(req: Request, res: Response) {
 
 async function add(req: Request, res: Response) {
   try {
-    const em = orm.em;
-    const categoryVersion = em.create(CategoryVersion, req.body.sanitizeInput);
-    await em.flush(); //El em.create la crea en memoria y em.flush realiza el insert
-    const populatedCategoryVersion = await em.findOneOrFail(
-      CategoryVersion,
-      { id: categoryVersion.id },
-      { populate: ['category', 'simulator'] }
+    const categoryVersion = await CategoryVersionService.create(
+      req.body.sanitizeInput
     );
     res.status(201).json({
       message: 'Category Version created',
-      data: populatedCategoryVersion,
+      data: categoryVersion,
     });
   } catch (error) {
     handleControllerError(error, res);
@@ -81,19 +65,14 @@ async function add(req: Request, res: Response) {
 
 async function update(req: Request, res: Response) {
   try {
-    const em = orm.em;
     const id = Number.parseInt(req.params.id as string);
-    const categoryVersion = await em.findOneOrFail(CategoryVersion, { id });
-    em.assign(categoryVersion, req.body.sanitizeInput); // Se realizó un cambio para normalizar
-    await em.flush();
-    const populatedCategoryVersion = await em.findOneOrFail(
-      CategoryVersion,
-      { id: categoryVersion.id },
-      { populate: ['category', 'simulator'] }
+    const categoryVersion = await CategoryVersionService.update(
+      id,
+      req.body.sanitizeInput
     );
     res.status(200).json({
       message: 'Category Version updated',
-      data: populatedCategoryVersion,
+      data: categoryVersion,
     });
   } catch (error) {
     handleControllerError(error, res);
@@ -102,10 +81,8 @@ async function update(req: Request, res: Response) {
 
 async function remove(req: Request, res: Response) {
   try {
-    const em = orm.em;
     const id = Number.parseInt(req.params.id as string);
-    const categoryVersion = await em.findOneOrFail(CategoryVersion, { id });
-    await em.removeAndFlush(categoryVersion);
+    const categoryVersion = await CategoryVersionService.remove(id);
     res
       .status(200)
       .json({ message: 'Category Version deleted', data: categoryVersion });
