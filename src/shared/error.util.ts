@@ -1,8 +1,15 @@
 import { Response } from 'express';
 import { NotFoundError } from '@mikro-orm/mysql';
 import { logger } from './logger.js';
+import { ValidationError } from './validation-error.js';
 
 export function handleControllerError(error: Error | unknown, res: Response): void {
+  // Los errores de validacion son esperados: no se loguean como error.
+  if (error instanceof ValidationError) {
+    res.status(400).json({ message: error.message });
+    return;
+  }
+
   logger.error('Controller error', error);
 
   if (error instanceof NotFoundError) {

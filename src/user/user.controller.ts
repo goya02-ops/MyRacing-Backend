@@ -1,8 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import type { AuthenticatedRequest } from '../auth/auth.middleware.js';
-import { User } from './user.entity.js';
-import { orm } from '../shared/orm.js';
-import { validateIdParam, validateRequired, isValidEmail } from '../utils/validations.js';
+import { UserService } from './user.service.js';
+import { validateIdParam } from '../utils/validations.js';
 import { handleControllerError } from '../shared/error.util.js';
 
 function sanitizeUserInput(req: Request, res: Response, next: NextFunction) {
@@ -24,8 +23,7 @@ function sanitizeUserInput(req: Request, res: Response, next: NextFunction) {
 
 async function getAll(req: Request, res: Response) {
   try {
-    const em = orm.em;
-    const users = await em.find(User, {});
+    const users = await UserService.findAll();
     res.status(200).json({ message: 'Find all users', data: users });
   } catch (error) {
     handleControllerError(error, res);
@@ -39,9 +37,8 @@ async function getOne(req: Request, res: Response) {
       return;
     }
 
-    const em = orm.em;
     const id = Number.parseInt(req.params.id as string);
-    const user = await em.findOneOrFail(User, { id });
+    const user = await UserService.findOne(id);
     res.status(200).json({ message: 'User found', data: user });
   } catch (error) {
     handleControllerError(error, res);
@@ -50,42 +47,7 @@ async function getOne(req: Request, res: Response) {
 
 async function add(req: Request, res: Response) {
   try {
-    const { userName, email, password } = req.body;
-
-    const validationError = validateRequired(req.body, ['userName', 'realName', 'email', 'password']);
-    if (validationError) {
-      res.status(400).json({ message: validationError });
-      return;
-    }
-
-    if (!isValidEmail(email)) {
-      res.status(400).json({ message: 'El formato del email es inválido' });
-      return;
-    }
-
-    if (!userName || userName.length < 3) {
-      res.status(400).json({ message: 'userName debe tener al menos 3 caracteres' });
-      return;
-    }
-
-    if (!password || password.length < 6) {
-      res.status(400).json({ message: 'La contraseña debe tener al menos 6 caracteres' });
-      return;
-    }
-
-    const em = orm.em;
-
-    const existingUser = await em.findOne(User, {
-      $or: [{ email }, { userName }],
-    });
-
-    if (existingUser) {
-      res.status(400).json({ message: 'El email o nombre de usuario ya está registrado' });
-      return;
-    }
-
-    const user = em.create(User, req.body);
-    await em.flush();
+    const user = await UserService.create(req.body);
     res.status(201).json({ message: 'User created', data: user });
   } catch (error) {
     handleControllerError(error, res);
@@ -99,17 +61,8 @@ async function update(req: Request, res: Response) {
       return;
     }
 
-    const em = orm.em;
     const id = Number.parseInt(req.params.id as string);
-    const user = await em.findOneOrFail(User, { id });
-
-    if (req.body.sanitizeInput?.email && !isValidEmail(req.body.sanitizeInput.email)) {
-      res.status(400).json({ message: 'El formato del email es inválido' });
-      return;
-    }
-
-    em.assign(user, req.body.sanitizeInput);
-    await em.flush();
+    const user = await UserService.update(id, req.body.sanitizeInput);
     res.status(200).json({ message: 'User updated', data: user });
   } catch (error) {
     handleControllerError(error, res);
@@ -123,10 +76,8 @@ async function remove(req: Request, res: Response) {
       return;
     }
 
-    const em = orm.em;
     const id = Number.parseInt(req.params.id as string);
-    const user = await em.findOneOrFail(User, { id });
-    await em.removeAndFlush(user);
+    const user = await UserService.remove(id);
     res.status(200).json({ message: 'User deleted', data: user });
   } catch (error) {
     handleControllerError(error, res);
@@ -135,14 +86,13 @@ async function remove(req: Request, res: Response) {
 
 async function getMe(req: AuthenticatedRequest, res: Response) {
   try {
-    const em = orm.em;
-    const userId = req.user?.id;
-    
-    const user = await em.findOneOrFail(User, { id: userId });
+    const user = await UserService.findProfile(req.user?.id);
     const userWithoutPassword: Record<string, unknown> = { ...user };
     delete userWithoutPassword.password;
-    
-    res.status(200).json({ message: 'Usuario encontrado', data: userWithoutPassword });
+
+    res
+      .status(200)
+      .json({ message: 'Usuario encontrado', data: userWithoutPassword });
   } catch (error) {
     handleControllerError(error, res);
   }
@@ -150,25 +100,16 @@ async function getMe(req: AuthenticatedRequest, res: Response) {
 
 async function updateMe(req: AuthenticatedRequest, res: Response) {
   try {
-    const em = orm.em;
-    const userId = req.user?.id;
-    
-    const user = await em.findOneOrFail(User, { id: userId });
-    
-    if (req.body.sanitizeInput?.email && !isValidEmail(req.body.sanitizeInput.email)) {
-      res.status(400).json({ message: 'El formato del email es inválido' });
-      return;
-    }
-    
-    const sanitizedInput = { ...req.body.sanitizeInput };
-    delete sanitizedInput.type;
-    
-    em.assign(user, sanitizedInput);
-    await em.flush();
-    
+    const user = await UserService.updateProfile(
+      req.user?.id,
+      req.body.sanitizeInput,
+    );
+
     const userWithoutPassword: Record<string, unknown> = { ...user };
     delete userWithoutPassword.password;
-    res.status(200).json({ message: 'Perfil actualizado', data: userWithoutPassword });
+    res
+      .status(200)
+      .json({ message: 'Perfil actualizado', data: userWithoutPassword });
   } catch (error) {
     handleControllerError(error, res);
   }
