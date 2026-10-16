@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import { Circuit } from './circuit.entity.js';
-import { orm } from '../shared/orm.js';
 import { handleControllerError } from '../shared/error.util.js';
+import { CircuitService } from './circuit.service.js';
 
 function sanitizeCircuitInput(req: Request, res: Response, next: NextFunction) {
   req.body.sanitizeInput = {
@@ -18,14 +17,12 @@ function sanitizeCircuitInput(req: Request, res: Response, next: NextFunction) {
   next();
 }
 
+// BE-20: controller delgado; el acceso a datos y los throws tipados viven en
+// CircuitService (molde para la "Familia B"). handleControllerError traduce
+// NotFoundError -> 404.
 async function findAll(req: Request, res: Response) {
   try {
-    const em = orm.em;
-    const circuits = await em.find(
-      Circuit,
-      {},
-      { populate: ['circuitVersions'] }
-    );
+    const circuits = await CircuitService.findAll();
     res
       .status(200)
       .json({ message: 'Find all circuits classes', data: circuits });
@@ -36,13 +33,8 @@ async function findAll(req: Request, res: Response) {
 
 async function findOne(req: Request, res: Response) {
   try {
-    const em = orm.em;
     const id = Number.parseInt(req.params.id as string);
-    const circuit = await em.findOneOrFail(
-      Circuit,
-      { id },
-      { populate: ['circuitVersions'] }
-    );
+    const circuit = await CircuitService.findOne(id);
     res.status(200).json({ message: 'Circuit found: ', data: circuit });
   } catch (error) {
     handleControllerError(error, res);
@@ -51,9 +43,7 @@ async function findOne(req: Request, res: Response) {
 
 async function add(req: Request, res: Response) {
   try {
-    const em = orm.em;
-    const circuit = em.create(Circuit, req.body);
-    await em.flush();
+    const circuit = await CircuitService.create(req.body);
     res.status(201).json({ message: 'Circuit class created', data: circuit });
   } catch (error) {
     handleControllerError(error, res);
@@ -62,11 +52,8 @@ async function add(req: Request, res: Response) {
 
 async function update(req: Request, res: Response) {
   try {
-    const em = orm.em;
     const id = Number.parseInt(req.params.id as string);
-    const circuit = await em.findOneOrFail(Circuit, { id });
-    em.assign(circuit, req.body.sanitizeInput);
-    await em.flush();
+    const circuit = await CircuitService.update(id, req.body.sanitizeInput);
     res.status(200).json({ message: 'Circuit class updated', data: circuit });
   } catch (error) {
     handleControllerError(error, res);
@@ -75,10 +62,8 @@ async function update(req: Request, res: Response) {
 
 async function remove(req: Request, res: Response) {
   try {
-    const em = orm.em;
     const id = Number.parseInt(req.params.id as string);
-    const circuit = await em.findOneOrFail(Circuit, { id });
-    await em.removeAndFlush(circuit);
+    const circuit = await CircuitService.remove(id);
     res.status(200).json({ message: 'Circuit class deleted', data: circuit });
   } catch (error) {
     handleControllerError(error, res);
