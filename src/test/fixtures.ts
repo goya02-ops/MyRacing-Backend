@@ -26,11 +26,19 @@ export interface CatalogIds {
   circuitVersionId: number;
 }
 
+// Contador en vez de Math.random para evitar S2245 y asegurar unicidad.
+let seedSequence = 0;
+
+function uniqueSuffix(tag: string): string {
+  seedSequence += 1;
+  return `${tag}_${Date.now()}_${seedSequence}`;
+}
+
 // Crea Simulator + Category + Circuit + sus versiones (mismo simulador para
 // ambas versiones, como exige el POST de combinaciones).
 export async function seedCatalog(tag: string): Promise<CatalogIds> {
   const em = orm.em.fork();
-  const suffix = `${tag}_${Date.now()}_${Math.floor(Math.random() * 1e6)}`;
+  const suffix = uniqueSuffix(tag);
 
   const simulator = em.create(Simulator, {
     name: `sim_${suffix}`,

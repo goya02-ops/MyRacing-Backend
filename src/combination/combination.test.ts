@@ -55,7 +55,11 @@ describe('combination: guards del generador de carreras (BE-19)', () => {
   }
 
   async function countCombinations(): Promise<number> {
-    return orm.em.fork().count(Combination, {});
+    // Acotado al catalog de este test: contar todas las combinaciones era flaky
+    // con otros archivos corriendo en paralelo (crean las suyas en beforeAll).
+    return orm.em.fork().count(Combination, {
+      categoryVersion: catalog.categoryVersionId,
+    });
   }
 
   async function countRacesFor(combinationId: number): Promise<number> {
