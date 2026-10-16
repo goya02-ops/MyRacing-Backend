@@ -2,7 +2,16 @@ import { Request, Response, NextFunction } from 'express';
 import type { FilterQuery } from '@mikro-orm/mysql';
 import { Combination } from './combination.entity.js';
 import { Race } from '../race/race.entity.js';
-import { validateSameSimulator, validateDate } from './combination.logic.js';
+import {
+  validateSameSimulator,
+  validateDate,
+  validateRaceInterval,
+  countRaces,
+  raceDates,
+  chunk,
+  MAX_RACES_PER_COMBINATION,
+  RACE_CREATE_BATCH_SIZE,
+} from './combination.logic.js';
 import { orm } from '../shared/orm.js';
 import { handleControllerError } from '../shared/error.util.js';
 
@@ -30,32 +39,33 @@ function sanitizeCombinationInput(
   next();
 }
 
-// Esto generar carreras automáticamente
-async function generateRaces(combination: Combination) {
+// Genera las carreras de [startDate, endDate] (inclusive) por lotes. La
+// cantidad e intervalo ya fueron validados/limitados por el llamador, así que
+// el rango es acotado y `raceDates` siempre avanza.
+async function generateRaces(
+  combination: Combination,
+  startDate: Date,
+  endDate: Date
+) {
   const em = orm.em;
+  const dates = raceDates(startDate, endDate, combination.raceIntervalMinutes);
 
-  const startDate = new Date(combination.dateFrom);
-  const endDate = new Date(combination.dateTo);
-  const intervalMs = combination.raceIntervalMinutes * 60 * 1000;
+  for (const batch of chunk(dates, RACE_CREATE_BATCH_SIZE)) {
+    for (const raceDate of batch) {
+      // Calcular la fecha límite de inscripción (15 minutos antes de la carrera)
+      const registrationDeadline = new Date(
+        raceDate.getTime() - 15 * 60 * 1000
+      );
 
-  let currentDate = new Date(startDate);
+      em.create(Race, {
+        raceDateTime: raceDate,
+        registrationDeadline: registrationDeadline,
+        combination: combination,
+      });
+    }
 
-  while (currentDate <= endDate) {
-    // Calcular la fecha límite de inscripción (15 minutos antes de la carrera)
-    const registrationDeadline = new Date(
-      currentDate.getTime() - 15 * 60 * 1000
-    );
-
-    em.create(Race, {
-      raceDateTime: currentDate,
-      registrationDeadline: registrationDeadline,
-      combination: combination,
-    });
-
-    currentDate = new Date(currentDate.getTime() + intervalMs);
+    await em.flush();
   }
-
-  await em.flush();
 }
 
 async function getAll(req: Request, res: Response) {
@@ -147,6 +157,28 @@ async function add(req: Request, res: Response) {
       return;
     }
 
+    // BE-19: sin esto, raceIntervalMinutes <= 0 produce un bucle infinito en
+    // generateRaces. El tope evita cientos de miles de filas en un request.
+    const raceIntervalMinutes = Number(
+      req.body.sanitizeInput.raceIntervalMinutes
+    );
+    if (!validateRaceInterval(raceIntervalMinutes)) {
+      res.status(400).json({
+        message: 'raceIntervalMinutes must be greater than 0.',
+      });
+      return;
+    }
+
+    const dateFrom = new Date(req.body.sanitizeInput.dateFrom);
+    const dateTo = new Date(req.body.sanitizeInput.dateTo);
+    const raceCount = countRaces(dateFrom, dateTo, raceIntervalMinutes);
+    if (raceCount > MAX_RACES_PER_COMBINATION) {
+      res.status(400).json({
+        message: `La combinación generaría ${raceCount} carreras; el máximo permitido es ${MAX_RACES_PER_COMBINATION}.`,
+      });
+      return;
+    }
+
     const validSimulator = await validateSameSimulator(
       idCategoryVersion,
       idCircuitVersion
@@ -164,7 +196,7 @@ async function add(req: Request, res: Response) {
     await em.flush();
 
     // Generar las carreras automáticamente
-    await generateRaces(combination);
+    await generateRaces(combination, dateFrom, dateTo);
 
     // No hacer populate de 'races' para evitar loop infinito
     const populatedCombination = await em.findOneOrFail(
@@ -220,6 +252,20 @@ async function update(req: Request, res: Response) {
       }
     }
 
+    // BE-19: rechazar intervalos <= 0 también al actualizar.
+    if (req.body.sanitizeInput.raceIntervalMinutes !== undefined) {
+      if (
+        !validateRaceInterval(
+          Number(req.body.sanitizeInput.raceIntervalMinutes)
+        )
+      ) {
+        res.status(400).json({
+          message: 'raceIntervalMinutes must be greater than 0.',
+        });
+        return;
+      }
+    }
+
     if (
       req.body.sanitizeInput.categoryVersion &&
       req.body.sanitizeInput.circuitVersion
@@ -243,35 +289,41 @@ async function update(req: Request, res: Response) {
       }
     }
 
+    // BE-19: validar la extensión (intervalo y tope) ANTES de persistir, para
+    // no dejar la combinación extendida sin sus carreras si el rango es inválido.
+    const effectiveIntervalMinutes = Number(
+      req.body.sanitizeInput.raceIntervalMinutes ??
+        combination.raceIntervalMinutes
+    );
+    const effectiveDateTo = req.body.sanitizeInput.dateTo
+      ? new Date(req.body.sanitizeInput.dateTo)
+      : new Date(combination.dateTo);
+    const extensionStart = new Date(
+      oldDateTo.getTime() + effectiveIntervalMinutes * 60 * 1000
+    );
+    const isExtending = effectiveDateTo > oldDateTo;
+
+    if (isExtending) {
+      const extraCount = countRaces(
+        extensionStart,
+        effectiveDateTo,
+        effectiveIntervalMinutes
+      );
+      if (extraCount > MAX_RACES_PER_COMBINATION) {
+        res.status(400).json({
+          message: `La extensión generaría ${extraCount} carreras; el máximo permitido es ${MAX_RACES_PER_COMBINATION}.`,
+        });
+        return;
+      }
+    }
+
     // Actualizar la combinación
     em.assign(combination, req.body.sanitizeInput);
     await em.flush();
 
-    // Si se extendió la fecha, generar carreras para los días nuevos
-    const newDateTo = new Date(combination.dateTo);
-    if (newDateTo > oldDateTo) {
-      // Se extendió el período, generar carreras para los días nuevos
-      const intervalMs = combination.raceIntervalMinutes * 60 * 1000;
-      
-      // Empezar desde el día siguiente al anterior dateTo
-      let currentDate = new Date(oldDateTo.getTime() + intervalMs);
-
-      while (currentDate <= newDateTo) {
-        // Calcular la fecha límite de inscripción (15 minutos antes de la carrera)
-        const registrationDeadline = new Date(
-          currentDate.getTime() - 15 * 60 * 1000
-        );
-
-        em.create(Race, {
-          raceDateTime: currentDate,
-          registrationDeadline: registrationDeadline,
-          combination: combination,
-        });
-
-        currentDate = new Date(currentDate.getTime() + intervalMs);
-      }
-
-      await em.flush();
+    // Si se extendió la fecha, generar carreras para el rango nuevo
+    if (isExtending) {
+      await generateRaces(combination, extensionStart, effectiveDateTo);
     }
 
     const populatedCombination = await em.findOneOrFail(
