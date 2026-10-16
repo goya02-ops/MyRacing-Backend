@@ -21,6 +21,8 @@ import { allowedOriginsFrom } from './shared/cors.js';
 import cors from 'cors';
 
 export const app = express();
+// BE-26: no exponer que el server usa Express (fingerprinting -> menos info al atacante).
+app.disable('x-powered-by');
 app.use(express.json());
 // BE-25: whitelist de origenes (URL_FRONTEND). Sin Origin (webhooks de MP,
 // server-to-server) el request sigue pasando; los navegadores de origenes no

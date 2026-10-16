@@ -9,4 +9,10 @@ describe('app', () => {
     expect(res.status).toBe(404);
     expect(res.body).toEqual({ message: 'Not Found' });
   });
+
+  it('no expone el header X-Powered-By (BE-26)', async () => {
+    expect(app.disabled('x-powered-by')).toBe(true);
+    const res = await request(app).get('/ruta-que-no-existe');
+    expect(res.headers['x-powered-by']).toBeUndefined();
+  });
 });
