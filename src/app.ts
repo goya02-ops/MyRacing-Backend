@@ -16,11 +16,16 @@ import { raceUserRouter } from './race-user/race-user.routes.js';
 import { authRouter } from './auth/auth.routes.js';
 import paymentRouter from './payment/payment.routes.js';
 import { errorHandler, notFoundHandler } from './shared/error-handler.middleware.js';
+import { URL_FRONTEND } from './shared/config.js';
+import { allowedOriginsFrom } from './shared/cors.js';
 import cors from 'cors';
 
 export const app = express();
 app.use(express.json());
-app.use(cors());
+// BE-25: whitelist de origenes (URL_FRONTEND). Sin Origin (webhooks de MP,
+// server-to-server) el request sigue pasando; los navegadores de origenes no
+// listados no reciben Access-Control-Allow-Origin.
+app.use(cors({ origin: allowedOriginsFrom(URL_FRONTEND) }));
 
 app.use((req, res, next) => {
   RequestContext.create(orm.em, next);
