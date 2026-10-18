@@ -16,18 +16,20 @@ import { raceUserRouter } from './race-user/race-user.routes.js';
 import { authRouter } from './auth/auth.routes.js';
 import paymentRouter from './payment/payment.routes.js';
 import { errorHandler, notFoundHandler } from './shared/error-handler.middleware.js';
-import { URL_FRONTEND } from './shared/config.js';
-import { allowedOriginsFrom } from './shared/cors.js';
+import { CORS_ALLOWED_ORIGINS } from './shared/config.js';
+import { allowedOriginsFrom, corsOriginOption } from './shared/cors.js';
 import cors from 'cors';
 
 export const app = express();
 // BE-26: no exponer que el server usa Express (fingerprinting -> menos info al atacante).
 app.disable('x-powered-by');
 app.use(express.json());
-// BE-25: whitelist de origenes (URL_FRONTEND). Sin Origin (webhooks de MP,
-// server-to-server) el request sigue pasando; los navegadores de origenes no
-// listados no reciben Access-Control-Allow-Origin.
-app.use(cors({ origin: allowedOriginsFrom(URL_FRONTEND) }));
+// BE-25: allowlist de origenes (CORS_ALLOWED_ORIGINS, admite patrones con `*`).
+// Sin Origin (webhooks de MP, server-to-server) el request sigue pasando; los
+// navegadores de origenes no listados no reciben Access-Control-Allow-Origin.
+// Sin la var la allowlist queda vacia (fail-closed): es obligatoria en
+// produccion y en los previews.
+app.use(cors({ origin: corsOriginOption(allowedOriginsFrom(CORS_ALLOWED_ORIGINS)) }));
 
 app.use((req, res, next) => {
   RequestContext.create(orm.em, next);

@@ -5,6 +5,11 @@ export default defineConfig({
     environment: 'node',
     include: ['src/**/*.{test,spec}.ts'],
     setupFiles: ['./src/test/setup.ts'],
+    // Allowlist de CORS determinista en local y CI, sin depender del .env.
+    env: {
+      CORS_ALLOWED_ORIGINS:
+        'http://localhost:5173,https://my-racing-frontend-git-*.vercel.app',
+    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json-summary'],
