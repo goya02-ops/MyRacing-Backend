@@ -26,6 +26,12 @@ function patternToRegExp(pattern: string): RegExp {
   return new RegExp(`^${body}$`);
 }
 
+// Un patron de solo comodines (`*`, `**`) matchearia cualquier origen: se
+// descarta para no abrir la allowlist por accidente.
+function isWildcardOnly(pattern: string): boolean {
+  return pattern.split('*').every((part) => part.length === 0);
+}
+
 export function isOriginAllowed(
   origin: string | undefined,
   patterns: string[],
@@ -33,7 +39,9 @@ export function isOriginAllowed(
   if (origin === undefined) {
     return true;
   }
-  return patterns.some((pattern) => patternToRegExp(pattern).test(origin));
+  return patterns
+    .filter((pattern) => !isWildcardOnly(pattern))
+    .some((pattern) => patternToRegExp(pattern).test(origin));
 }
 
 type OriginCallback = (err: Error | null, allow?: boolean) => void;

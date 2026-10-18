@@ -27,6 +27,8 @@ app.use(express.json());
 // BE-25: allowlist de origenes (CORS_ALLOWED_ORIGINS, admite patrones con `*`).
 // Sin Origin (webhooks de MP, server-to-server) el request sigue pasando; los
 // navegadores de origenes no listados no reciben Access-Control-Allow-Origin.
+// Sin la var la allowlist queda vacia (fail-closed): es obligatoria en
+// produccion y en los previews.
 app.use(cors({ origin: corsOriginOption(allowedOriginsFrom(CORS_ALLOWED_ORIGINS)) }));
 
 app.use((req, res, next) => {
