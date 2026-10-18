@@ -3,17 +3,17 @@ import express from 'express';
 import cors from 'cors';
 import request from 'supertest';
 import { app } from './app.js';
-import { CORS_ALLOWED_ORIGINS, URL_FRONTEND } from './shared/config.js';
+import { CORS_ALLOWED_ORIGINS } from './shared/config.js';
 import {
   allowedOriginsFrom,
   corsOriginOption,
   isOriginAllowed,
 } from './shared/cors.js';
 
-// BE-25: `cors()` estaba abierto a cualquier origen. Ahora la whitelist sale de
-// URL_FRONTEND y los origenes no listados no reciben Access-Control-Allow-Origin
-// (los navegadores bloquean la lectura aunque el request llegue al server).
-const allowed = allowedOriginsFrom(URL_FRONTEND);
+// BE-25: `cors()` estaba abierto a cualquier origen. Ahora la allowlist sale de
+// CORS_ALLOWED_ORIGINS y los origenes no listados no reciben
+// Access-Control-Allow-Origin (los navegadores bloquean la lectura aunque el
+// request llegue al server).
 const disallowed = 'https://evil.example.com';
 
 // Allowlist propia de CORS: acepta patrones con `*` para los previews de
@@ -23,14 +23,14 @@ const corsPatterns = allowedOriginsFrom(CORS_ALLOWED_ORIGINS);
 const configuredOrigin = corsPatterns.find((origin) => !origin.includes('*')) ?? '';
 const configuredPreviewPattern = corsPatterns.find((origin) => origin.includes('*'));
 const configuredPreviewOrigin =
-  configuredPreviewPattern?.replace('*', 'feature-76-thethirdagile') ?? '';
+  configuredPreviewPattern?.replace('*', 'feature-x-thethirdagile') ?? '';
 
 const previewPatterns = [
   'http://localhost:5173',
   'https://my-racing-frontend-git-*.vercel.app',
 ];
 const previewOrigin =
-  'https://my-racing-frontend-git-feature-76-thethirdagile.vercel.app';
+  'https://my-racing-frontend-git-feature-x-thethirdagile.vercel.app';
 
 describe('CORS restringido (BE-25)', () => {
   describe('allowedOriginsFrom', () => {
@@ -178,28 +178,6 @@ describe('CORS restringido (BE-25)', () => {
         .set('Access-Control-Request-Method', 'GET');
       expect(res.headers['access-control-allow-origin']).toBeUndefined();
     });
-
-    it.runIf(allowed.length > 0)(
-      'refleja el origen permitido (URL_FRONTEND)',
-      async () => {
-        const res = await request(app)
-          .get('/api/users')
-          .set('Origin', allowed[0]);
-        expect(res.headers['access-control-allow-origin']).toBe(allowed[0]);
-      },
-    );
-
-    it.runIf(allowed.length > 0)(
-      'autoriza el preflight del origen permitido',
-      async () => {
-        const res = await request(app)
-          .options('/api/users')
-          .set('Origin', allowed[0])
-          .set('Access-Control-Request-Method', 'GET');
-        expect(res.status).toBe(204);
-        expect(res.headers['access-control-allow-origin']).toBe(allowed[0]);
-      },
-    );
 
     it('configura la allowlist de CORS en el entorno de test', () => {
       expect(corsPatterns.length).toBeGreaterThan(0);

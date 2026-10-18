@@ -12,6 +12,7 @@ export const MERCADOPAGO_ACCESS_TOKEN = process.env.MERCADOPAGO_ACCESS_TOKEN;
 export const URL_FRONTEND = process.env.URL_FRONTEND;
 export const URL_BACKEND = process.env.URL_BACKEND;
 export const URL_WEBHOOK_MP = process.env.URL_WEBHOOK_MP;
+export const CORS_ALLOWED_ORIGINS = process.env.CORS_ALLOWED_ORIGINS;
 export const BREVO_API_KEY = process.env.BREVO_API_KEY || '';
 export const FROM_EMAIL = process.env.FROM_EMAIL || '';
 
