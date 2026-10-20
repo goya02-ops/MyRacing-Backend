@@ -5,14 +5,13 @@ import { handleControllerError } from '../shared/error.util.js';
 export const AuthController = {
   async register(req: Request, res: Response) {
     try {
-      const { userName, realName, email, password, type } = req.body;
+      const { userName, realName, email, password } = req.body;
 
       const result = await AuthService.register({
         userName,
         realName,
         email,
         password,
-        type,
       });
 
       const status = result.success ? 201 : 400;

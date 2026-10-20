@@ -12,7 +12,6 @@ interface RegisterInput {
   realName: string;
   email: string;
   password: string;
-  type?: UserType;
 }
 
 interface LoginInput {
@@ -30,7 +29,7 @@ interface AuthResult {
 
 export const AuthService = {
   async register(input: RegisterInput): Promise<AuthResult> {
-    const { userName, realName, email, password, type } = input;
+    const { userName, realName, email, password } = input;
 
     const validationError = validateRequired({ userName, email, password }, ['userName', 'email', 'password']);
     if (validationError) {
@@ -66,7 +65,7 @@ export const AuthService = {
       realName,
       email,
       password: hashedPassword,
-      type: type || UserType.COMMON,
+      type: UserType.COMMON,
     });
 
     await em.flush();
