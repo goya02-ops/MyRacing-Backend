@@ -8,6 +8,10 @@ raceRouter.get(
   '/by-combination/:combination/:previousLimit/:nextLimit',
   controller.getCurrentByCombination
 );
+raceRouter.get(
+  '/by-combination/:combination',
+  controller.getCurrentByCombination
+);
 raceRouter.get('/:id', authenticateToken, requireAdmin, controller.getOne);
 raceRouter.post('/', authenticateToken, requireAdmin, controller.sanitizeRaceInput, controller.add);
 raceRouter.put('/:id', authenticateToken, requireAdmin, controller.sanitizeRaceInput, controller.update);

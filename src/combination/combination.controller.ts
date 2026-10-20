@@ -3,6 +3,7 @@ import { Combination } from './combination.entity.js';
 import { Race } from '../race/race.entity.js';
 import { validateSameSimulator, validateDate } from './combination.logic.js';
 import { orm } from '../shared/orm.js';
+import { clampLimit } from '../shared/pagination.js';
 
 function sanitizeCombinationInput(
   req: Request,
@@ -59,6 +60,9 @@ async function generateRaces(combination: Combination) {
 async function getAll(req: Request, res: Response) {
   try {
     const em = orm.em;
+    const limit = req.query.limit !== undefined ? clampLimit(req.query.limit, 50) : undefined;
+    const offset = req.query.offset !== undefined ? Math.max(0, Number.parseInt(String(req.query.offset), 10) || 0) : undefined;
+
     const combinations = await em.find(
       Combination,
       {},
@@ -69,6 +73,8 @@ async function getAll(req: Request, res: Response) {
           'circuitVersion.circuit',
           'circuitVersion.simulator',
         ],
+        ...(limit !== undefined && { limit }),
+        ...(offset !== undefined && { offset }),
       }
     );
     res
@@ -88,6 +94,8 @@ async function getCurrentRaces(req: Request, res: Response) {
       dateTo: { $gte: now },
     };
 
+    const limit = clampLimit(req.query.limit, 50);
+
     const combinations = await em.find(Combination, filter, {
       populate: [
         'categoryVersion.category',
@@ -95,6 +103,7 @@ async function getCurrentRaces(req: Request, res: Response) {
         'circuitVersion.circuit',
         'circuitVersion.simulator',
       ],
+      limit,
     });
     res
       .status(200)

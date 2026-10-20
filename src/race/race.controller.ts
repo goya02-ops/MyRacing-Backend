@@ -4,6 +4,7 @@ import { validateDates } from '../race/race.logic.js';
 import { orm } from '../shared/orm.js';
 import { validateIdParam, validateRequired } from '../utils/validations.js';
 import { handleControllerError } from '../shared/error.util.js';
+import { clampLimit } from '../shared/pagination.js';
 
 function sanitizeRaceInput(req: Request, res: Response, next: NextFunction) {
   req.body.sanitizeInput = {
@@ -29,8 +30,10 @@ async function getCurrentByCombination(req: Request, res: Response) {
     }
 
     const em = orm.em;
-    const limitPrev = Number.parseInt(previousLimit as string) || 5;
-    const limitNext = Number.parseInt(nextLimit as string) || 5;
+    const rawPrev = req.query.previousLimit ?? req.query.limit ?? previousLimit;
+    const rawNext = req.query.nextLimit ?? req.query.limit ?? nextLimit;
+    const limitPrev = clampLimit(rawPrev, 5);
+    const limitNext = clampLimit(rawNext, 5);
     const idCombination = Number.parseInt(combination as string);
     const currentDate = new Date();
 
@@ -44,7 +47,6 @@ async function getCurrentByCombination(req: Request, res: Response) {
           ],
         },
         {
-          populate: ['raceUsers'],
           orderBy: { raceDateTime: 'DESC' },
           limit: limitPrev,
         }
@@ -58,7 +60,6 @@ async function getCurrentByCombination(req: Request, res: Response) {
           ],
         },
         {
-          populate: ['raceUsers'],
           orderBy: { raceDateTime: 'ASC' },
           limit: limitNext,
         }
