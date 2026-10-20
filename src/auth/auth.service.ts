@@ -6,6 +6,7 @@ import { TokenService } from './token.service.js';
 import { EmailService } from './email.service.js';
 import { AUTH_CONFIG } from './auth.constants.js';
 import { logger } from '../shared/logger.js';
+import { RefreshToken } from './refresh-token.entity.js';
 
 interface RegisterInput {
   userName: string;
@@ -76,6 +77,12 @@ export const AuthService = {
     const accessToken = TokenService.generateAccessToken(user);
     const refreshToken = TokenService.generateRefreshToken(user);
 
+    em.create(RefreshToken, {
+      token: refreshToken,
+      user,
+    });
+    await em.flush();
+
     const { password: _, ...userWithoutPassword } = user;
 
     return {
@@ -114,6 +121,12 @@ export const AuthService = {
     const accessToken = TokenService.generateAccessToken(user);
     const refreshToken = TokenService.generateRefreshToken(user);
 
+    em.create(RefreshToken, {
+      token: refreshToken,
+      user,
+    });
+    await em.flush();
+
     logger.info('User logged in', { userId: user.id });
 
     const { password: _, ...userWithoutPassword } = user;
@@ -133,6 +146,8 @@ export const AuthService = {
     }
 
     TokenService.removeRefreshToken(refreshToken);
+    const em = orm.em;
+    await em.nativeDelete(RefreshToken, { token: refreshToken });
     logger.info('User logged out', { refreshToken: refreshToken.substring(0, 10) + '...' });
 
     return { success: true, message: 'Sesión cerrada exitosamente' };
@@ -151,10 +166,18 @@ export const AuthService = {
 
     if (!decoded) {
       TokenService.removeRefreshToken(refreshToken);
+      const em = orm.em;
+      await em.nativeDelete(RefreshToken, { token: refreshToken });
       return { success: false, message: 'Refresh token inválido o expirado' };
     }
 
     const em = orm.em;
+    const tokenInDb = await em.findOne(RefreshToken, { token: refreshToken });
+    if (!tokenInDb) {
+      TokenService.removeRefreshToken(refreshToken);
+      return { success: false, message: 'Refresh token inválido o revocado' };
+    }
+
     const user = await em.findOne(User, { id: decoded.id });
 
     if (!user) {
@@ -220,9 +243,13 @@ export const AuthService = {
     user.password = await bcrypt.hash(newPassword, AUTH_CONFIG.BCRYPT_ROUNDS);
     await em.flush();
 
+    // Revocar todos los refresh tokens activos asociados al usuario en la base de datos y en memoria
+    await em.nativeDelete(RefreshToken, { user: user.id });
+    TokenService.revokeRefreshTokensByUserId(user.id!);
+
     TokenService.removeResetToken(token);
 
-    logger.info('Password reset successfully', { userId: user.id });
+    logger.info('Password reset successfully and refresh tokens revoked', { userId: user.id });
 
     return { success: true, message: 'Contraseña actualizada exitosamente' };
   },

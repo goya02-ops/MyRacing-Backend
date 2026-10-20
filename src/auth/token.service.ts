@@ -68,6 +68,24 @@ export const TokenService = {
     return refreshTokenStore.has(token);
   },
 
+  revokeRefreshTokensByUserId(userId: number): void {
+    for (const token of refreshTokenStore) {
+      try {
+        const decoded = jwt.decode(token) as TokenPayload | null;
+        if (decoded && decoded[TOKEN_PAYLOAD_KEYS.ID] === userId) {
+          refreshTokenStore.delete(token);
+        }
+      } catch {
+        refreshTokenStore.delete(token);
+      }
+    }
+    logger.info('Revoked in-memory refresh tokens for user', { userId });
+  },
+
+  revokeAllUserRefreshTokens(userId: number): void {
+    this.revokeRefreshTokensByUserId(userId);
+  },
+
   createResetToken(userId: number): string {
     const token = randomBytes(AUTH_CONFIG.RESET_TOKEN_BYTES).toString('hex');
     const expiresAt = new Date(Date.now() + AUTH_CONFIG.RESET_TOKEN_EXPIRY_MS);
