@@ -26,7 +26,6 @@ export interface RaceUserResponse {
     userName: string;
     realName: string;
     email: string;
-    password: string;
     type: string;
   };
   race: {

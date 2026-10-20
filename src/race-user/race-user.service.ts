@@ -109,7 +109,6 @@ function mapToResponse(raceUser: RaceUser): RaceUserResponse {
       userName: raceUser.user.userName,
       realName: raceUser.user.realName,
       email: raceUser.user.email,
-      password: raceUser.user.password,
       type: raceUser.user.type as string,
     },
     race: {
