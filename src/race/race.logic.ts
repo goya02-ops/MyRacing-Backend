@@ -1,8 +1,25 @@
 import { Race } from './race.entity.js';
 import { Combination } from '../combination/combination.entity.js';
 import { orm } from '../shared/orm.js';
+import { validateIdParam } from '../utils/validations.js';
 
-export async function validateDates(race: Race, idCombination: number) {
+// Valida el id de combinación y las fechas juntas con await.
+// Compartido por `add` y `update`: devuelve el mensaje de error o null si todo está bien.
+export async function validateCombinationAndDates(
+  raceLike: Pick<Race, 'raceDateTime' | 'registrationDeadline'>,
+  idCombination: number | undefined
+): Promise<string | null> {
+  if (!idCombination || !validateIdParam(idCombination)) {
+    return 'ID de combinación inválido';
+  }
+  const validDates = await validateDates(raceLike as Race, idCombination);
+  if (!validDates) {
+    return 'registrationDeadline debe ser anterior a raceDateTime';
+  }
+  return null;
+}
+
+export async function validateDates(race: Race, idCombination: number): Promise<boolean> {
   try {
     const em = orm.em;
 

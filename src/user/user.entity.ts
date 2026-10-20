@@ -9,6 +9,12 @@ import {
 import { BaseEntity } from '../shared/baseEntity.js';
 import { RaceUser } from '../race-user/race-user.entity.js';
 
+export enum UserType {
+  ADMIN = 'admin',
+  COMMON = 'common',
+  PREMIUM = 'premium',
+}
+
 @Entity()
 export class User extends BaseEntity {
   @Property({ type: 'string', nullable: false })
@@ -30,10 +36,4 @@ export class User extends BaseEntity {
     cascade: [Cascade.ALL],
   })
   raceUsers = new Collection<RaceUser>(this);
-}
-
-export enum UserType {
-  ADMIN = 'admin',
-  COMMON = 'common',
-  PREMIUM = 'premium',
 }
