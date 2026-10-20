@@ -1,8 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import { Combination } from './combination.entity.js';
-import { Race } from '../race/race.entity.js';
-import { validateSameSimulator, validateDate } from './combination.logic.js';
-import { orm } from '../shared/orm.js';
+import { CombinationService } from './combination.service.js';
+import { handleControllerError } from '../shared/error.util.js';
 
 function sanitizeCombinationInput(
   req: Request,
@@ -28,280 +26,74 @@ function sanitizeCombinationInput(
   next();
 }
 
-// Esto generar carreras automáticamente
-async function generateRaces(combination: Combination) {
-  const em = orm.em;
-
-  const startDate = new Date(combination.dateFrom);
-  const endDate = new Date(combination.dateTo);
-  const intervalMs = combination.raceIntervalMinutes * 60 * 1000;
-
-  let currentDate = new Date(startDate);
-
-  while (currentDate <= endDate) {
-    // Calcular la fecha límite de inscripción (15 minutos antes de la carrera)
-    const registrationDeadline = new Date(
-      currentDate.getTime() - 15 * 60 * 1000
-    );
-
-    em.create(Race, {
-      raceDateTime: currentDate,
-      registrationDeadline: registrationDeadline,
-      combination: combination,
-    });
-
-    currentDate = new Date(currentDate.getTime() + intervalMs);
-  }
-
-  await em.flush();
-}
-
 async function getAll(req: Request, res: Response) {
   try {
-    const em = orm.em;
-    const combinations = await em.find(
-      Combination,
-      {},
-      {
-        populate: [
-          'categoryVersion.category',
-          'categoryVersion.simulator',
-          'circuitVersion.circuit',
-          'circuitVersion.simulator',
-        ],
-      }
-    );
+    const combinations = await CombinationService.findAll();
     res
       .status(200)
       .json({ message: 'Find all combinations', data: combinations });
-  } catch (error: any) {
-    res.status(500).json({ data: error.message });
+  } catch (error) {
+    handleControllerError(error, res);
   }
 }
 
 async function getCurrentRaces(req: Request, res: Response) {
   try {
-    const em = orm.em;
-    const now = new Date();
-    const filter: any = {
-      dateFrom: { $lte: now },
-      dateTo: { $gte: now },
-    };
-
-    const combinations = await em.find(Combination, filter, {
-      populate: [
-        'categoryVersion.category',
-        'categoryVersion.simulator',
-        'circuitVersion.circuit',
-        'circuitVersion.simulator',
-      ],
-    });
+    const combinations = await CombinationService.findCurrent();
     res
       .status(200)
       .json({ message: 'Find current combinations', data: combinations });
-  } catch (error: any) {
-    res.status(500).json({ data: error.message });
+  } catch (error) {
+    handleControllerError(error, res);
   }
 }
 
 async function getOne(req: Request, res: Response) {
   try {
-    const em = orm.em;
     const id = Number.parseInt(req.params.id as string);
-    const combination = await em.findOneOrFail(
-      Combination,
-      { id },
-      {
-        populate: [
-          'categoryVersion.category',
-          'categoryVersion.simulator',
-          'circuitVersion.circuit',
-          'circuitVersion.simulator',
-          'races',
-        ],
-      }
-    );
+    const combination = await CombinationService.findOne(id);
     res.status(200).json({ message: 'Combination found', data: combination });
-  } catch (error: any) {
-    res.status(500).json({ data: error.message });
+  } catch (error) {
+    handleControllerError(error, res);
   }
 }
 
 async function add(req: Request, res: Response) {
   try {
-    const em = orm.em;
-    const idCategoryVersion = Number.parseInt(
-      req.body.sanitizeInput.categoryVersion
+    const combination = await CombinationService.create(
+      req.body.sanitizeInput
     );
-    const idCircuitVersion = Number.parseInt(
-      req.body.sanitizeInput.circuitVersion
-    );
-    const validDate = validateDate(req.body.sanitizeInput);
-
-    if (!validDate) {
-      res
-        .status(400)
-        .json({ message: 'dateFrom must be earlier than dateTo.' });
-      return;
-    }
-
-    const validSimulator = await validateSameSimulator(
-      idCategoryVersion,
-      idCircuitVersion
-    );
-
-    if (!validSimulator) {
-      res.status(400).json({
-        message:
-          'CategoryVersion and CircuitVersion must belong to the same Simulator.',
-      });
-      return;
-    }
-
-    const combination = em.create(Combination, req.body.sanitizeInput);
-    await em.flush();
-
-    // Generar las carreras automáticamente
-    await generateRaces(combination);
-
-    // No hacer populate de 'races' para evitar loop infinito
-    const populatedCombination = await em.findOneOrFail(
-      Combination,
-      { id: combination.id },
-      {
-        populate: [
-          'categoryVersion.category',
-          'categoryVersion.simulator',
-          'circuitVersion.circuit',
-          'circuitVersion.simulator',
-        ],
-      }
-    );
-
     res.status(201).json({
       message: 'Combination created',
-      data: populatedCombination,
+      data: combination,
     });
-  } catch (error: any) {
-    res.status(500).json({ data: error.message });
+  } catch (error) {
+    handleControllerError(error, res);
   }
 }
 
 async function update(req: Request, res: Response) {
   try {
-    const em = orm.em;
     const id = Number.parseInt(req.params.id as string);
-    const combination = await em.findOneOrFail(Combination, { id }, { populate: ['races'] });
-    const oldDateTo = new Date(combination.dateTo);
-
-    // Validar que NO se intente cambiar dateFrom
-    if (req.body.sanitizeInput.dateFrom) {
-      const newDateFrom = new Date(req.body.sanitizeInput.dateFrom);
-      const oldDateFrom = new Date(combination.dateFrom);
-      
-      if (newDateFrom.getTime() !== oldDateFrom.getTime()) {
-        res.status(400).json({ 
-          message: 'No se puede modificar la fecha de inicio (dateFrom) de una combinación existente.' 
-        });
-        return;
-      }
-    }
-
-    if (req.body.sanitizeInput.dateFrom && req.body.sanitizeInput.dateTo) {
-      // Se espera que se envie un formulario modificando ambas fechas
-      const validDate = validateDate(req.body.sanitizeInput);
-      if (!validDate) {
-        res
-          .status(400)
-          .json({ message: 'dateFrom must be earlier than dateTo.' });
-        return;
-      }
-    }
-
-    if (
-      req.body.sanitizeInput.categoryVersion &&
-      req.body.sanitizeInput.circuitVersion
-    ) {
-      const idCategoryVersion = Number.parseInt(
-        req.body.sanitizeInput.categoryVersion
-      );
-      const idCircuitVersion = Number.parseInt(
-        req.body.sanitizeInput.circuitVersion
-      );
-      const validSimulator = await validateSameSimulator(
-        idCategoryVersion,
-        idCircuitVersion
-      );
-      if (!validSimulator) {
-        res.status(400).json({
-          message:
-            'CategoryVersion and CircuitVersion must belong to the same Simulator.',
-        });
-        return;
-      }
-    }
-
-    // Actualizar la combinación
-    em.assign(combination, req.body.sanitizeInput);
-    await em.flush();
-
-    // Si se extendió la fecha, generar carreras para los días nuevos
-    const newDateTo = new Date(combination.dateTo);
-    if (newDateTo > oldDateTo) {
-      // Se extendió el período, generar carreras para los días nuevos
-      const intervalMs = combination.raceIntervalMinutes * 60 * 1000;
-      
-      // Empezar desde el día siguiente al anterior dateTo
-      let currentDate = new Date(oldDateTo.getTime() + intervalMs);
-
-      while (currentDate <= newDateTo) {
-        // Calcular la fecha límite de inscripción (15 minutos antes de la carrera)
-        const registrationDeadline = new Date(
-          currentDate.getTime() - 15 * 60 * 1000
-        );
-
-        em.create(Race, {
-          raceDateTime: currentDate,
-          registrationDeadline: registrationDeadline,
-          combination: combination,
-        });
-
-        currentDate = new Date(currentDate.getTime() + intervalMs);
-      }
-
-      await em.flush();
-    }
-
-    const populatedCombination = await em.findOneOrFail(
-      Combination,
-      { id: combination.id },
-      {
-        populate: [
-          'categoryVersion.category',
-          'categoryVersion.simulator',
-          'circuitVersion.circuit',
-          'circuitVersion.simulator',
-        ],
-      }
+    const combination = await CombinationService.update(
+      id,
+      req.body.sanitizeInput
     );
-    
     res
       .status(200)
-      .json({ message: 'Combination updated', data: populatedCombination });
-  } catch (error: any) {
-    res.status(500).json({ data: error.message });
+      .json({ message: 'Combination updated', data: combination });
+  } catch (error) {
+    handleControllerError(error, res);
   }
 }
 
 async function remove(req: Request, res: Response) {
   try {
-    const em = orm.em;
     const id = Number.parseInt(req.params.id as string);
-    const combination = await em.findOneOrFail(Combination, { id });
-    await em.removeAndFlush(combination);
+    const combination = await CombinationService.remove(id);
     res.status(200).json({ message: 'Combination deleted', data: combination });
-  } catch (error: any) {
-    res.status(500).json({ data: error.message });
+  } catch (error) {
+    handleControllerError(error, res);
   }
 }
 
