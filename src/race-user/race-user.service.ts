@@ -21,13 +21,22 @@ export async function getOneRaceUser(id: number): Promise<RaceUserResponse | nul
   return raceUser ? mapToResponse(raceUser) : null;
 }
 
-export async function addRaceUser(data: RaceUserAddRequest): Promise<{ success: boolean; data?: RaceUserResponse; error?: string }> {
+export async function addRaceUser(
+  data: RaceUserAddRequest,
+  requestingUserId?: number,
+  isAdmin: boolean = false
+): Promise<{ success: boolean; data?: RaceUserResponse; error?: string }> {
   const em = orm.em;
   const userId = Number(data.userId);
   const raceId = Number(data.raceId);
 
   if (isNaN(userId) || isNaN(raceId)) {
     return { success: false, error: 'User ID and Race ID are required' };
+  }
+
+  if (requestingUserId !== undefined && !isAdmin && userId !== requestingUserId) {
+    logger.warn('Unauthorized enroll attempt for another user', { requestingUserId, targetUserId: userId });
+    return { success: false, error: 'Unauthorized to enroll another user' };
   }
 
   const user = await em.findOne(User, { id: userId });
@@ -55,7 +64,7 @@ export async function addRaceUser(data: RaceUserAddRequest): Promise<{ success: 
   await em.flush();
   logger.info('Race user created', { raceUserId: raceUser.id, userId, raceId });
 
-  return { success: true };
+  return { success: true, data: mapToResponse(raceUser) };
 }
 
 export async function updateRaceUser(id: number, data: RaceUserUpdateRequest): Promise<{ success: boolean; error?: string }> {

@@ -38,14 +38,29 @@ export async function getOne(req: Request, res: Response): Promise<void> {
 
 export async function add(req: Request, res: Response): Promise<void> {
   try {
+    const userPayload = (req as any).user;
+    const isAdmin = userPayload?.type === 'admin';
+    const requestingUserId = userPayload?.id;
+
     const input = sanitizeRaceUserInput(req);
-    const { userId, raceId } = parseSanitizedInput(input);
-    
-    const result = await addRaceUser({ userId, raceId });
+    const parsed = parseSanitizedInput(input);
+    const raceId = parsed.raceId;
+    const userId = !isNaN(parsed.userId) && parsed.userId > 0 ? parsed.userId : requestingUserId;
+
+    if (!isAdmin && requestingUserId !== undefined && userId !== requestingUserId) {
+      res.status(403).json({ message: 'Unauthorized to enroll another user' });
+      return;
+    }
+
+    const result = await addRaceUser({ userId, raceId }, requestingUserId, isAdmin);
     
     if (!result.success) {
       if (result.error === 'User already registered for this race') {
         res.status(409).json({ message: result.error });
+        return;
+      }
+      if (result.error === 'Unauthorized to enroll another user' || result.error?.includes('Unauthorized')) {
+        res.status(403).json({ message: result.error });
         return;
       }
       res.status(400).json({ message: result.error });

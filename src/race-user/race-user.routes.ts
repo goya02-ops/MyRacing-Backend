@@ -21,7 +21,7 @@ raceUserRouter.delete('/self/:raceId', authenticateToken, removeSelf);
 raceUserRouter.get('/', authenticateToken, requireAdmin, getAll);
 raceUserRouter.get('/by-user', authenticateToken, requireAdmin, getByUser);
 raceUserRouter.get('/:id', authenticateToken, requireAdmin, getOne);
-raceUserRouter.post('/', authenticateToken, requireAdmin, add);
+raceUserRouter.post('/', authenticateToken, add);
 raceUserRouter.put('/:id', authenticateToken, requireAdmin, update);
 raceUserRouter.patch('/:id', authenticateToken, requireAdmin, update);
 raceUserRouter.delete('/:id', authenticateToken, requireAdmin, remove);
